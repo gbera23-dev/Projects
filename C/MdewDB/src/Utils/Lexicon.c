@@ -119,30 +119,30 @@ char** getAllWords(Lexicon* lex, char* prefix, int* status) {
     return NULL; 
 }
 
-//temporary main, for testing purposes
-int main() { 
-    int status; 
-    Lexicon* new_lex = initLexicon(&status); 
-    int res = addWord(new_lex, strdup("so"), &status); 
-    addWord(new_lex, strdup("pashastick"), &status); 
-    assert(new_lex->root->nextLetters['s' - 'a']);
-    assert(new_lex->root->nextLetters['s' - 'a']->nextLetters['o' - 'a']);
-    printf("%d\n", new_lex->root->nextLetters['s' - 'a']->nextLetters['o' - 'a']->isWord);
-    printf("%s\n",findWord(new_lex, strdup("soleimanpasha"), &status)); 
-    printf("%s\n", findWord(new_lex, strdup("pashast"), &status)); 
-        printf("%d\n", status);
+// //temporary main, for testing purposes
+// int main() { 
+//     int status; 
+//     Lexicon* new_lex = initLexicon(&status); 
+//     int res = addWord(new_lex, strdup("so"), &status); 
+//     addWord(new_lex, strdup("pashastick"), &status); 
+//     assert(new_lex->root->nextLetters['s' - 'a']);
+//     assert(new_lex->root->nextLetters['s' - 'a']->nextLetters['o' - 'a']);
+//     printf("%d\n", new_lex->root->nextLetters['s' - 'a']->nextLetters['o' - 'a']->isWord);
+//     printf("%s\n",findWord(new_lex, strdup("soleimanpasha"), &status)); 
+//     printf("%s\n", findWord(new_lex, strdup("pashast"), &status)); 
+//         printf("%d\n", status);
 
-    printf("%s\n", findWord(new_lex, strdup("pashastomboli"), &status));
-    printf("%d\n", status); 
-        printf("%d\n", addWord(new_lex, strdup("pashastomboliqqqqqqqqq"), &status));
-                printf("%d\n", addWord(new_lex, strdup("pasha"), &status));
+//     printf("%s\n", findWord(new_lex, strdup("pashastomboli"), &status));
+//     printf("%d\n", status); 
+//         printf("%d\n", addWord(new_lex, strdup("pashastomboliqqqqqqqqq"), &status));
+//                 printf("%d\n", addWord(new_lex, strdup("pasha"), &status));
 
-       printf("%s\n", findWord(new_lex, strdup("pashastomboli"), &status));
-    printf("%d\n", status); 
-            printf("%s\n", findWord(new_lex, strdup("pashastomboliqqqqqqqqq"), &status));
-            printf("%d\n", status);
+//        printf("%s\n", findWord(new_lex, strdup("pashastomboli"), &status));
+//     printf("%d\n", status); 
+//             printf("%s\n", findWord(new_lex, strdup("pashastomboliqqqqqqqqq"), &status));
+//             printf("%d\n", status);
 
-             printf("%s\n", findWord(new_lex, strdup("pasha"), &status));
-            printf("%d\n", status);
-    return 0; 
-}
+//              printf("%s\n", findWord(new_lex, strdup("pasha"), &status));
+//             printf("%d\n", status);
+//     return 0; 
+// }

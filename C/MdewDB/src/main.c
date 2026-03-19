@@ -1,7 +1,7 @@
 #include <stdio.h> 
 #include <stdlib.h>
-#include "Utils/ConsolePrintManager.h"
-
+#include "Header_files/ConsolePrintManager.h"
+#include "Header_files/Lexicon.h"
 
 int main() {
     colorTheText("green"); 

@@ -6,7 +6,9 @@
 
 //Private Function Prototypes 
 void addWordRec(node* root, char* word);
-void findWordRec(node* root, char* word, char** prefix, int i, int* contains_word);
+void findWordRec(node* root, char* word, char** prefix, int i, int* contains_word, 
+    node** end_node_ref, node** last_divergent_node_ref, 
+    int* branch_index);
 void init(Lexicon* lex);
 node* createNode(int isWord);
 
@@ -26,7 +28,7 @@ Lexicon* initLexicon(int* status) {
 Adds a new word to the lexicon. 
 returns 1, if addition was successful, 0 otherwise
 */
-int addWord(Lexicon* lex, char* word, int* status) {  
+void addWord(Lexicon* lex, char* word, int* status) {  
     if(!lex->num_words) {
         init(lex); 
     }
@@ -34,8 +36,7 @@ int addWord(Lexicon* lex, char* word, int* status) {
     lex->num_words++; 
     if(status != NULL) {
         *status = STATUS_OK;
-    }
-    return 1; 
+    } 
 }
 
 /*PRIVATE ACCESS: Recursively adds a new word to the tree*/
@@ -45,41 +46,64 @@ void addWordRec(node* root, char* word) {
         node* next_node = root->nextLetters[current_letter - 'a']; 
         if(!next_node) {
             next_node = createNode(!(strlen(word) - 1));    
-            root->nextLetters[current_letter - 'a'] = next_node;       
+            root->nextLetters[current_letter - 'a'] = next_node;    
+            root->reference_count++;    
         }
         addWordRec(next_node, ++word); 
     } else {
         root->isWord = 1; 
     }
 }
-/*PRIVATE ACCESS: Recursively looks for a word in tree, builds the prefix and returns it*/
-void findWordRec(node* root, char* word, char** prefix, int i, int* contains_word) {
+/*PRIVATE ACCESS: Recursively looks for a word in tree and fills in optional word 
+information: 
+
+char** prefix : reference to the longest prefix in tree that our word starts with
+
+int* contains_word : reference to a int, which is 1 if word is maintained by tree
+
+node** end_node_ref : reference to the node where word ends
+
+node** last_divergent_node_ref : reference to largest common prefix of all 
+the words currently in the lexicon with this 
+word(note that largest common prefix is assumed to be strictly not be our word)
+
+int* branch_index: reference to the index of the branch that needs to be cut off from last
+divergent node 
+*/
+void findWordRec(node* root, char* word, char** prefix, int i, int* contains_word, 
+node** end_node_ref, node** last_divergent_node_ref, int* branch_index) {
     char current_letter = word[0]; 
     if(current_letter) {
         node* next_node = root->nextLetters[current_letter - 'a']; 
         if(!next_node)return; 
-        (*prefix)[i++] = current_letter; 
-        findWordRec(next_node, ++word, prefix, i, contains_word); 
+        if(prefix)(*prefix)[i++] = current_letter; 
+        
+        if(last_divergent_node_ref && root->reference_count > 1) {
+            *last_divergent_node_ref = root; 
+            *branch_index = current_letter - 'a'; 
+        }
+
+        findWordRec(next_node, ++word, prefix, i, contains_word, end_node_ref,
+             last_divergent_node_ref, branch_index); 
     } else {
-        (*prefix)[i] = 0; 
-        *contains_word = root->isWord;
+        if(prefix)(*prefix)[i] = 0; 
+        if(contains_word)*contains_word = root->isWord;
+
+        if(end_node_ref)*end_node_ref = root;
     }
 }
 
 
 /*PRIVATE ACCESS: Initializes a new tree*/
 void init(Lexicon* lex) {
-    lex->root = malloc(sizeof(node)); 
-    lex->root->isWord = 0; 
-    for(int i = 0; i < 26; i++) {
-        lex->root->nextLetters[i] = NULL; 
-    } 
+    lex->root = createNode(0);
 }
 
 /*PRIVATE ACCESS: Creates a new node*/
 node* createNode(int isWord) {
     node* res = malloc(sizeof(node));
     res->isWord = isWord; 
+    res->reference_count = 0; 
     for(int i = 0; i < 26; i++) {
         res->nextLetters[i] = NULL; 
     }
@@ -90,8 +114,28 @@ node* createNode(int isWord) {
 Removes a word from the lexicon. 
 returns 1, if removal was successful, 0 otherwise 
 */
-int removeWord(Lexicon* lex, char* word, int* status) {
-    return 0; 
+void removeWord(Lexicon* lex, char* word, int* status) {
+    node* end_node = NULL; 
+    node* last_div_node = NULL; 
+    int branch_index; 
+    findWordRec(lex->root, word, NULL, 0, NULL, &end_node, &last_div_node, 
+        &branch_index); 
+   
+    if(!end_node) {
+        if(status)*status = STATUS_NOT_FOUND;
+        return;
+    }
+
+    if(end_node->reference_count) {
+        end_node->isWord = 0;
+        lex->num_words--;
+        if(status)*status = STATUS_DELETED;
+        return; 
+    } 
+    last_div_node->reference_count--; 
+    last_div_node->nextLetters[branch_index] = NULL; 
+    lex->num_words--; 
+    if(status)*status = STATUS_DELETED;
 }
 
 /*
@@ -102,7 +146,7 @@ Returns prefix string, where lexicon failed to continue search of the word.
 char* findWord(Lexicon* lex, char* word, int* status) { 
     char* prefix = malloc(strlen(word)); 
     int contains_word = 0; 
-    findWordRec(lex->root, word, &prefix, 0, &contains_word); 
+    findWordRec(lex->root, word, &prefix, 0, &contains_word, NULL, NULL, NULL); 
     if(status != NULL) {
         *status = strcmp(prefix, word) == 0 && contains_word ? STATUS_OK : STATUS_NOT_FOUND;
     }
@@ -119,11 +163,11 @@ char** getAllWords(Lexicon* lex, char* prefix, int* status) {
     return NULL; 
 }
 
-// //temporary main, for testing purposes
+//temporary main, for testing purposes
 // int main() { 
 //     int status; 
 //     Lexicon* new_lex = initLexicon(&status); 
-//     int res = addWord(new_lex, strdup("so"), &status); 
+//     addWord(new_lex, strdup("so"), &status); 
 //     addWord(new_lex, strdup("pashastick"), &status); 
 //     assert(new_lex->root->nextLetters['s' - 'a']);
 //     assert(new_lex->root->nextLetters['s' - 'a']->nextLetters['o' - 'a']);
@@ -134,15 +178,47 @@ char** getAllWords(Lexicon* lex, char* prefix, int* status) {
 
 //     printf("%s\n", findWord(new_lex, strdup("pashastomboli"), &status));
 //     printf("%d\n", status); 
-//         printf("%d\n", addWord(new_lex, strdup("pashastomboliqqqqqqqqq"), &status));
-//                 printf("%d\n", addWord(new_lex, strdup("pasha"), &status));
 
-//        printf("%s\n", findWord(new_lex, strdup("pashastomboli"), &status));
+//        addWord(new_lex, strdup("pashastomboli"), &status);
+//               addWord(new_lex, strdup("pashastomboliqqq"), &status);
 //     printf("%d\n", status); 
 //             printf("%s\n", findWord(new_lex, strdup("pashastomboliqqqqqqqqq"), &status));
 //             printf("%d\n", status);
 
-//              printf("%s\n", findWord(new_lex, strdup("pasha"), &status));
-//             printf("%d\n", status);
+//              printf("string: %s ", findWord(new_lex, strdup("pas"), &status));
+//              printf("status: %d\n", status); 
+        
+//              removeWord(new_lex, strdup("pashastomboli"), &status); 
+//         printf("status is : %d\n", status); 
+        
+//         printf("%s\n", findWord(new_lex, strdup("pashastomboli"), &status));
+        
+//         printf("status should be 1 now: %d\n", status);
+
+//         //lets create divergence and see if removeWord works 
+
+//             addWord(new_lex, strdup("sona"), &status);
+//             printf("status should be 0 ::: %d\n", status); 
+//             addWord(new_lex, strdup("sopo"), &status); 
+//             printf("status should be 0 ::: %d\n", status); 
+//             addWord(new_lex, strdup("sorini"), &status); 
+//             printf("status should be 0 ::: %d\n", status); 
+
+
+//             removeWord(new_lex, strdup("sorini"), &status); 
+
+//             printf("status should be 2 ::: %d\n", status); 
+
+//             printf("string is : %s\n", findWord(new_lex, strdup("sorini"), &status)); 
+
+//             printf("status should be 1 ::: %d\n", status); 
+
+//             printf("string is : %s\n", findWord(new_lex, strdup("sopo"), &status)); 
+
+//             printf("status should be 0 ::: %d\n", status); 
+
+//             printf("string is : %s\n", findWord(new_lex, strdup("sona"), &status));
+            
+//             printf("status should be 0 ::: %d\n", status); 
 //     return 0; 
 // }

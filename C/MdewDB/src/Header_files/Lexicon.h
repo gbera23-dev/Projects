@@ -22,12 +22,14 @@ or checked.
 /*
 Struct node maintains
 isWord integer, which is 0, if starting from root to this node generates a valid word and any other number 
-if it does not and array of node pointers that maintain address of the next nodes in the tree. nextLetter 
-array will be filled with NULLS, if a node is a leaf node, or if there does not exist a path to say 'a', we 
+if it does not and array of node pointers that maintain address of the next nodes in the tree. 
+reference_count variable maintains number of non null terms inside nextLetters array. 
+nextLetter array will be filled with NULLS, if a node is a leaf node, or if there does not exist a path to say 'a', we 
 write NULL on that position that is 'a' - 'a' = 0 in this case. 
 */
 typedef struct node {
     int isWord; 
+    int reference_count;
     struct node* nextLetters[26]; 
 }node; 
 
@@ -39,7 +41,9 @@ typedef struct {
 
 typedef enum {
     STATUS_OK, 
-    STATUS_NOT_FOUND
+    STATUS_NOT_FOUND, 
+    STATUS_DELETED,
+    STATUS_INTERNAL_ERROR
 }Status; 
 
 
@@ -56,15 +60,15 @@ Lexicon* initLexicon(int* status);
 
 /*
 Adds a new word to the lexicon. 
-returns 1, if addition was successful, 0 otherwise
+puts status STATUS_OK, if addition was successful, STATUS_INTERNAL_ERROR otherwise
 */
-int addWord(Lexicon* lex, char* word, int* status);
+void addWord(Lexicon* lex, char* word, int* status);
 
 /*
 Removes a word from the lexicon. 
-returns 1, if removal was successful, 0 otherwise 
+puts status STATUS_DELETED, if removal was successful, STATUS_NOT_FOUND otherwise 
 */
-int removeWord(Lexicon* lex, char* word, int* status);
+void removeWord(Lexicon* lex, char* word, int* status);
 
 /*
 Looks for a word in the lexicon. 
@@ -81,5 +85,9 @@ Otherwise, returns array of all strings that are starting with prefix.
 */
 char** getAllWords(Lexicon* lex, char* prefix, int* status); 
 
+/*
+Destroys the given lexicon
+*/
+void destroyLexicon(Lexicon* lex); 
 
 #endif

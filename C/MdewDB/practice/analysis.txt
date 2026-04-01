@@ -4,3 +4,83 @@ I have successfully connected my software to a listening port and communicated w
 
 Next thing to do now is to make server concurrent, meaning to provide a multi - threaded environment, where each accept of the socket is 
 ran as a separate thread so that server can talk to many users at the same time. 
+
+
+
+
+
+::: Writing remove function of lexicon :::
+
+What do we want? 
+
+we want to remove a word from the lexicon. 
+
+what is the problem? 
+
+it we decide to simply disconnect a particular path from ROOT, we will succeed in deleting the
+word, but all the words starting with the same prefix will also be sacrificed. 
+
+ONE IDEA:: 
+
+Idea is to follow path of this word and where it ends, put isWord as false, but problem here
+is that lexicon will have pseudo prefixes. if this particular word is only one with that
+particular prefix, lexicon will assume that some other word exists that extends this prefix. 
+
+So we need to cut the reference at some node and that place should be exactly the one, where 
+no other words have same prefix. 
+
+Via this analysis we get two cases of deleting the word::: 
+
+1) word is not prefix of any other word : : 
+in this case, word ends at leaf node and we need to find the highest node that translates 
+to prefix only used by the word to be removed, which simply means to find the highest node 
+that has only one reference, this may follow up to the root, this can happen, but it is ok. 
+Algorithm I am thinking of utilizes backtracking and operates in O(26*|p|) = O(|p|).
+
+
+2) word is a prefix of some other word : : 
+This is much simpler case, to check this, all we need to do is to see, when word ends, if there 
+are any non - null references on that node, if yes, then word itself is prefix of some other word, 
+in that case, we can simply but isWord false, and nothing will break.
+
+
+The algorithm of both cases can be combined into one via ::: 
+
+
+1) finding the node at which word ends(if at some point, we cannot go forward, word is not in 
+lexicon, so we return status NOT_FOUND)
+
+2) check if that node has any references
+
+3) if it does, simply put isWord false and finish. 
+
+4) if it does not, go up the tree and disconnect this branch from the node, which has more than 
+one reference. 
+
+
+
+PSEUDO - CODE : : : 
+
+if NODE IS null : 
+finish with status NOT_FOUND 
+
+Otherwise : 
+if word array is not exhausted, call same function with next node
+if it is : 
+
+if countnotnull(ref_array) > 0  : put isWord false and finish with status DELETED 
+
+else : remove reference from first multi - referenced node and finish with status DELETED 
+
+deleteWord functionality was implemented. 
+
+
+
+
+Lexicon requires testing, we need to write a lot of tests and also we need a way for a client 
+to be able to destroy the lexicon(also consider freeing memory before cutting of a branch from 
+tree)
+
+
+
+

@@ -1,0 +1,347 @@
+package com.oop.web_project.services;
+import com.oop.web_project.annotations.*;
+import com.oop.web_project.dto.requests.CardFilterRequest;
+import com.oop.web_project.dto.requests.PageRequest;
+import com.oop.web_project.entities.*;
+import com.oop.web_project.exceptions.accountExceptions.AccountNotFoundException;
+import com.oop.web_project.exceptions.cardExceptions.*;
+import com.oop.web_project.exceptions.transactionExceptions.CurrencyExchangeException;
+import com.oop.web_project.persistence.*;
+import com.oop.web_project.utils.PageUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.util.List;
+
+@Service
+public class CardServiceImpl implements CardService {
+
+
+    public record FetchedBalances(CardBalance from, CardBalance to) {}
+
+    private final CardRepository cardRepository;
+    private final CardBalanceRepository cardBalanceRepository;
+    private final CurrencyExchangeRepository currencyExchangeRepository;
+    private final CurrencyRepository currencyRepository;
+    private final AccountRepository accountRepository;
+
+    public CardServiceImpl(CardRepository cardRepository,
+                           CardBalanceRepository cardBalanceRepository,
+                           CurrencyExchangeRepository currencyExchangeRepository,
+                           CurrencyRepository currencyRepository,
+                           AccountRepository accountRepository) {
+        this.cardRepository = cardRepository;
+        this.cardBalanceRepository = cardBalanceRepository;
+        this.currencyExchangeRepository = currencyExchangeRepository;
+        this.currencyRepository = currencyRepository;
+        this.accountRepository = accountRepository;
+    }
+
+    @Override
+    @CardAccessPermissionRequired(idArgName = "cardId")
+    @Transactional
+    public void activateCard(long cardId) {
+        Card card = cardRepository.findWithLockById(cardId).orElseThrow(
+                () -> new CardNotFoundException("card cannot be found!"));
+        if(card.isActive()) {
+            throw new CardAlreadyActiveException("card is already active!");
+        }
+        card.setActive(true);
+    }
+
+    @Override
+    @CardAccessPermissionRequired(idArgName = "cardId")
+    @Transactional
+    public void deactivateCard(long cardId) {
+        Card card = cardRepository.findWithLockById(cardId).orElseThrow(
+                () -> new CardNotFoundException("card cannot be found!"));
+        if(!card.isActive()) {
+            throw new CardAlreadyDeactivatedException("card is already inactive!");
+        }
+        card.setActive(false);
+    }
+
+    @Override
+    @AccountAccessPermissionRequired(idArgName = "accountId")
+    @Transactional
+    public long createCard(long accountId, Card card) {
+        Account account = accountRepository.findById(accountId)
+                        .orElseThrow(
+                                () -> new AccountNotFoundException("Account not found!")
+                        );
+
+        if(cardRepository.existsByPanToken(card.getPanToken()) ||
+        cardRepository.existsByPanMasked(card.getPanMasked())) {
+            throw new CardAlreadyExistsException("Card already exists!");
+        }
+
+        card.setAccount(account);
+        Card createdCard = cardRepository.save(card);
+        return createdCard.getId();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    @CardAccessPermissionRequired(idArgName = "cardId")
+    public Card selectCardById(long cardId) {
+        return cardRepository.findByIdWithDetails(cardId)
+                .orElseThrow(
+                        () -> new CardNotFoundException("Could could not be found!")
+                );
+    }
+
+    @Override
+    @CardAccessPermissionRequired(idArgName = "cardId")
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CARD)
+    @Transactional
+    public void addCurrencyToCard(long cardId, String currencyCode) {
+        Card card = cardRepository.findById(cardId)
+                .orElseThrow(
+                        () -> new CardNotFoundException("card could not be found!")
+                );
+
+        Currency currency = currencyRepository.findCurrencyByCode(currencyCode)
+                .orElseThrow(
+                        () -> new InvalidCurrencyException("Such currency does not exist!")
+                );
+
+        if (cardBalanceRepository.existsByCardIdAndCurrencyCode(cardId, currencyCode)) {
+            throw new DuplicateCurrencyException("Card already has a balance for this currency!");
+        }
+
+        CardBalance cardBalance = new CardBalance(
+                null,
+                BigDecimal.ZERO,
+                card,
+                currency
+        );
+        try {
+            cardBalanceRepository.saveAndFlush(cardBalance);
+        } catch (DataIntegrityViolationException ex) {
+            throw new DuplicateCurrencyException("Card already has a balance for this currency!");
+        }
+    }
+
+    @Override
+    @CardAccessPermissionRequired(idArgName = "cardId")
+    public List<CardBalance> selectCardBalances(long cardId) {
+        return cardBalanceRepository.findAllByCardId(cardId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteCard(long cardId) {
+        Card card = cardRepository.findById(cardId)
+                .orElseThrow(() -> new CardNotFoundException("card could not be found!"));
+        cardRepository.delete(card);
+    }
+
+    @Override
+    @Deposit
+    @CardAccessPermissionRequired(idArgName = "cardId")
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CARD)
+    @Transactional
+    public void depositMoney(long cardId, BigDecimal amountToAdd, String currencyCode) {
+        Card card = cardRepository.findById(cardId)
+                .orElseThrow(
+                        () -> new CardNotFoundException("card could not be found!")
+                );
+
+        CardBalance balance = cardBalanceRepository.findByCardIdAndCurrencyCode(cardId, currencyCode)
+                .orElseThrow(
+                        () -> new CardBalanceNotFoundException("Balance could not be found!")
+                );
+
+        BigDecimal totalBalance = balance.getAmount().add(amountToAdd);
+
+        if(totalBalance.compareTo(card.getSpendingLimit()) > 0) {
+            throw new InsufficientMoneyOnCardException("spending limit exceeded!");
+        }
+
+        balance.setAmount(totalBalance);
+    }
+
+    @Override
+    @Withdraw
+    @CardAccessPermissionRequired(idArgName = "cardId")
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CARD)
+    @Transactional
+    public void withdrawMoney(long cardId, BigDecimal amountToWithdraw, String currencyCode) {
+        CardBalance balance = cardBalanceRepository.findByCardIdAndCurrencyCode(cardId, currencyCode)
+                .orElseThrow(
+                        () -> new CardBalanceNotFoundException("Balance could not be found!")
+                );
+
+        BigDecimal finalBalance = balance.getAmount().subtract(amountToWithdraw);
+
+        if(finalBalance.compareTo(BigDecimal.ZERO) < 0) {
+            throw new InsufficientMoneyOnCardException("Insufficient funds!");
+        }
+
+        balance.setAmount(finalBalance);
+    }
+
+    @Override
+    @Transfer
+    @CardAccessPermissionRequired(idArgName = "cardId")
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CARD)
+    @Transactional
+    public void transferMoney(long cardId, long receiverCardId, BigDecimal amount, String currencyCode) {
+        if(cardId == receiverCardId){
+            throw new SameCardTransferException("Tried to transfer to the same card!");
+        }
+        Card receiverCard = cardRepository.findById(receiverCardId)
+                .orElseThrow(
+                        () -> new CardNotFoundException("Card could not be found!")
+                );
+
+        FetchedBalances fetchedBalances = safeFetchBalances(cardId, receiverCardId,
+                currencyCode, currencyCode);
+
+        BigDecimal finalBalanceFrom = fetchedBalances.from().getAmount().subtract(amount);
+
+        if(finalBalanceFrom.compareTo(BigDecimal.ZERO) < 0) {
+            throw new InsufficientMoneyOnCardException("Insufficient funds!");
+        }
+
+        BigDecimal finalBalanceTo = fetchedBalances.to().getAmount().add(amount);
+
+        if(finalBalanceTo.compareTo(receiverCard.getSpendingLimit()) > 0) {
+            throw new InsufficientMoneyOnCardException("spending limit exceeded!");
+        }
+
+        fetchedBalances.from().setAmount(finalBalanceFrom);
+        fetchedBalances.to().setAmount(finalBalanceTo);
+    }
+
+    @Override
+    @Exchange
+    @CardAccessPermissionRequired(idArgName = "cardId")
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CARD)
+    @Transactional
+    public void changeCurrency(long cardId, BigDecimal amount, String fromCurrencyCode, String toCurrencyCode) {
+        if(fromCurrencyCode.equals(toCurrencyCode)){
+            throw new DuplicateCurrencyException("Tried to exchange the same currency");
+        }
+        FetchedBalances fetchedBalances =
+                safeFetchBalances(cardId, cardId, fromCurrencyCode, toCurrencyCode);
+
+        BigDecimal finalBalanceFrom = fetchedBalances.from().getAmount().subtract(amount);
+
+        if(finalBalanceFrom.compareTo(BigDecimal.ZERO) < 0) {
+            throw new InsufficientMoneyOnCardException("Insufficient funds!");
+        }
+
+        CurrencyExchange currencyRate = currencyExchangeRepository.
+                findByCurrencyCodes(fromCurrencyCode, toCurrencyCode)
+                .orElseThrow(
+                        () -> new CurrencyExchangeException("Could not find currency exchange!")
+                );
+
+        BigDecimal finalBalanceTo = fetchedBalances.to().getAmount().add(exchangeCurrency(amount, currencyRate.getRate()));
+
+        fetchedBalances.from().setAmount(finalBalanceFrom);
+        fetchedBalances.to().setAmount(finalBalanceTo);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    @AccountAccessPermissionRequired(idArgName = "accountId")
+    public List<Card> getAllCardsForAccount(long accountId) {
+        return cardRepository.getAllByAccountId(accountId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    @CardAccessPermissionRequired(idArgName = "cardId")
+    public boolean checkCardExpiration(long cardId) {
+        Card card = cardRepository.findById(cardId)
+                .orElseThrow(
+                        () -> new CardNotFoundException("card could not be found!")
+                );
+        return LocalDate.now().isAfter(card.getExpirationDate());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    @CardAccessPermissionRequired
+    public Page<Card> filterCards(CardFilterRequest cardFilterRequest, PageRequest pageRequest) {
+
+        Specification<Card> specification = Specification.unrestricted();
+
+        if (cardFilterRequest.getType() != null) {
+            specification = specification.and((root, query, cb) ->
+                    cb.equal(root.get("type"), cardFilterRequest.getType()));
+        }
+
+        if (cardFilterRequest.getBrand() != null) {
+            specification = specification.and((root, query, cb) ->
+                    cb.equal(root.get("brand"), cardFilterRequest.getBrand()));
+        }
+
+        if(cardFilterRequest.getSpendingLimit() != null) {
+            specification = specification.and((root, query, cb) ->
+                    cb.lessThanOrEqualTo(root.get("spendingLimit"), cardFilterRequest.getSpendingLimit()));
+        }
+
+        if(cardFilterRequest.getExpirationDate() != null) {
+            specification = specification.and((root, query, cb) ->
+                    cb.lessThanOrEqualTo(root.get("expirationDate"), cardFilterRequest.getExpirationDate()));
+        }
+
+        return cardRepository.findAll(specification, PageUtils.buildPageable(pageRequest));
+    }
+
+    /**
+     * Method exchanges given money into new currency
+     * @param amount amount of money in first currency
+     * @param rate how much one unit of money of first currency is worth in other currency
+     * @return exchanged amount
+     */
+    private BigDecimal exchangeCurrency(BigDecimal amount, BigDecimal rate) {
+        BigDecimal result =  amount.multiply(rate);
+        return result.setScale(2, RoundingMode.HALF_EVEN);
+    }
+
+    /**
+     * Method resolves dining philosopher's problem and fetches balances of cards in particular currencies
+     * @param fromCardId id of the card from which money will be transferred
+     * @param toCardId id of the card to which money will be transferred
+     * @param fromCurrencyCode code of the currency for the card we are transferring money from
+     * @param toCurrencyCode code of the currency for the card we are transferring money to
+     * @return record of fetched balances(balance from first card, balance from second card)
+     */
+    private FetchedBalances safeFetchBalances(long fromCardId, long toCardId, String fromCurrencyCode,
+                                                        String toCurrencyCode) {
+        CardBalance balanceFrom;
+        CardBalance balanceTo;
+
+        boolean lockFromFirst;
+
+        if (fromCardId != toCardId) {
+            lockFromFirst = fromCardId < toCardId;
+        } else {
+            lockFromFirst = fromCurrencyCode.compareTo(toCurrencyCode) < 0;
+        }
+
+        if (lockFromFirst) {
+            balanceFrom = cardBalanceRepository.findByCardIdAndCurrencyCode(fromCardId, fromCurrencyCode)
+                    .orElseThrow(() -> new CardBalanceNotFoundException("Source card balance could not be found!"));
+            balanceTo = cardBalanceRepository.findByCardIdAndCurrencyCode(toCardId, toCurrencyCode)
+                    .orElseThrow(() -> new CardBalanceNotFoundException("Target card balance could not be found!"));
+        } else {
+            balanceTo = cardBalanceRepository.findByCardIdAndCurrencyCode(toCardId, toCurrencyCode)
+                    .orElseThrow(() -> new CardBalanceNotFoundException("Target card balance could not be found!"));
+            balanceFrom = cardBalanceRepository.findByCardIdAndCurrencyCode(fromCardId, fromCurrencyCode)
+                    .orElseThrow(() -> new CardBalanceNotFoundException("Source card balance could not be found!"));
+        }
+        return new FetchedBalances(balanceFrom, balanceTo);
+    }
+
+}

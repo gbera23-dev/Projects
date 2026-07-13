@@ -1,0 +1,94 @@
+package com.oop.web_project.services;
+
+import com.oop.web_project.dto.requests.AccountFilterRequest;
+import com.oop.web_project.dto.requests.PageRequest;
+import com.oop.web_project.entities.Account;
+import com.oop.web_project.entities.AccountCategory;
+import com.oop.web_project.entities.Card;
+import com.oop.web_project.entities.Customer;
+import org.springframework.data.domain.Page;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+/**
+ * Service interface defining operations for managing accounts,
+ * including creation, customer registration, and balance retrieval.
+ */
+public interface AccountService {
+
+    /**
+     * Creates a new account and
+     * returns id of the newly created account
+     */
+    long createAccount(Account account);
+
+    /**
+     * activates the account
+     * @param accountId id of the account we need to activate
+     */
+    void activateAccount(long accountId);
+
+    /**
+     * deactivates the account
+     * @param accountId id of the account we need to deactivate
+     */
+    void deactivateAccount(long accountId);
+
+    /**
+     * deletes account from database
+     * @param accountId id of the account we need to delete
+     */
+    void deleteAccount(long accountId);
+
+    /**
+     *
+     * @param accountId for account in the database by id
+     * @return returns appropriate account
+     */
+    Account selectAccountById(long accountId);
+
+    /**
+     * Retrieves account associated to the card
+     * @param cardId id of the card
+     * @return account associated to the card
+     */
+    Account selectAccountByCardId(long cardId);
+
+    /**
+     * looks for accounts associated to the email of the particular customer
+     * @param customerEmail email of the customer whose accounts we are looking for
+     * @return list of accounts customer has
+     */
+    List<Account> selectAccountsByCustomerEmail(String customerEmail);
+
+    /**
+     * looks for accounts associated to the customer with id
+     * @param customerId id of the customer whose accounts we are looking for
+     * @return list of accounts customer has
+     */
+    List<Account> selectAccountsByCustomerId(long customerId);
+
+    /**
+     * finds the account in the database and updates its credentials
+     * @param accountId id of the account we are looking to update
+     * @param accountName account's name
+     */
+    void updateAccount(long accountId, String accountName);
+    /**
+     * Attempts to register the given customer as an owner of the specified account.
+     */
+    void registerCustomerToAccount(long accountId, long customerId);
+
+    /**
+     * Retrieves the total balance of the given account, which is sum of money in each card's
+     * particular currency
+     */
+    BigDecimal getAccountBalanceByCurrency(long accountId, String currencyName);
+
+    /**
+     * Retrieves accounts based on given parameters, applies paging and sorting
+     */
+    Page<Account> filterAccounts(AccountFilterRequest accountFilterRequest, PageRequest pageRequest);
+}

@@ -1,0 +1,95 @@
+package com.oop.web_project.services;
+
+import com.oop.web_project.dto.requests.CardFilterRequest;
+import com.oop.web_project.dto.requests.PageRequest;
+import com.oop.web_project.entities.*;
+import org.springframework.data.domain.Page;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+/**
+ * Service interface defining operations for managing cards,
+ * including activation, deposits, withdrawals, and transfers.
+ */
+public interface CardService {
+
+    /**
+     * Activates the given card.
+     */
+    void activateCard(long cardId);
+
+    /**
+     * Deactivates the given card.
+     */
+    void deactivateCard(long cardId);
+
+    /**
+     * Creates new card and
+     * returns id of the newly created card
+     */
+    long createCard(long accountId, Card card);
+
+
+    /**
+     * Selects card by id
+     */
+    Card selectCardById(long cardId);
+
+    /**
+     * Initially all cards have no currencies, we manually add them via this service method
+     * @param cardId id of the card to which we are adding new currency
+     * @param currencyCode code of the currency we need to add to a card
+     * Note: Balance of the currency is initialized to zero
+     */
+    void addCurrencyToCard(long cardId, String currencyCode);
+
+    /**
+     * looks for balances in different currencies for the card and returns them
+     * @param cardId id of the card we are returning balances for
+     * @return list of balances
+     */
+    List<CardBalance> selectCardBalances(long cardId);
+
+    /**
+     * Looks for card with cardId in database and deletes it
+     */
+    void deleteCard(long cardId);
+
+    /**
+     * Deposits the specified amount into the account linked to the given card.
+     */
+    void depositMoney(long cardId, BigDecimal amountToAdd, String currencyCode);
+
+    /**
+     * Withdraws the specified amount from the account linked to the given card.
+     */
+    void withdrawMoney(long cardId, BigDecimal amountToWithdraw, String currencyCode);
+
+    /**
+     * Transfers the specified amount from the sender's card to the receiver's card.
+     */
+    void transferMoney(long senderCardId, long receiverCardId, BigDecimal amount, String currencyCode);
+
+    /**
+     * Converts some amount of money on card from one currency to the other
+     */
+    void changeCurrency(long cardId, BigDecimal amount, String fromCurrencyCode, String toCurrencyCode);
+
+    /**
+     * Retrieves all cards associated with the given account.
+     */
+    List<Card> getAllCardsForAccount(long accountId);
+
+    /**
+     * @param cardId Id of the card
+     * @return true if card is expired, false otherwise
+     */
+    boolean checkCardExpiration(long cardId);
+
+    /**
+     * Retrieves cards based on given parameters, applies paging and sorting
+     */
+    Page<Card> filterCards(CardFilterRequest cardFilterRequest, PageRequest pageRequest);
+}

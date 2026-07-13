@@ -1,0 +1,195 @@
+package com.oop.web_project.services;
+import com.oop.web_project.annotations.AccountAccessPermissionRequired;
+import com.oop.web_project.annotations.ActivityCheckRequired;
+import com.oop.web_project.annotations.CardAccessPermissionRequired;
+import com.oop.web_project.annotations.CustomerAccessPermissionRequired;
+import com.oop.web_project.dto.requests.AccountFilterRequest;
+import com.oop.web_project.dto.requests.PageRequest;
+import com.oop.web_project.entities.Account;
+import com.oop.web_project.entities.CheckActivityTarget;
+import com.oop.web_project.entities.Customer;
+import com.oop.web_project.exceptions.accountExceptions.AccountAlreadyActiveException;
+import com.oop.web_project.exceptions.accountExceptions.AccountAlreadyDeactivatedException;
+import com.oop.web_project.exceptions.accountExceptions.AccountNotFoundException;
+import com.oop.web_project.exceptions.cardExceptions.CardBalanceNotFoundException;
+import com.oop.web_project.exceptions.customerExceptions.CustomerNotFoundException;
+import com.oop.web_project.persistence.AccountRepository;
+import com.oop.web_project.persistence.CardRepository;
+import com.oop.web_project.persistence.CustomerRepository;
+import com.oop.web_project.persistence.TransactionRepository;
+import com.oop.web_project.utils.PageUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+@Service
+public class AccountServiceImpl implements AccountService {
+
+    private final AccountRepository accountRepository;
+    private final CustomerRepository customerRepository;
+    private final CardRepository cardRepository;
+    private final TransactionRepository transactionRepository;
+
+    public AccountServiceImpl(AccountRepository accountRepository,
+                              CustomerRepository customerRepository,
+                              CardRepository cardRepository,
+                              TransactionRepository transactionRepository) {
+        this.accountRepository = accountRepository;
+        this.customerRepository = customerRepository;
+        this.cardRepository = cardRepository;
+        this.transactionRepository = transactionRepository;
+    }
+
+    @Override
+    @Transactional
+    public long createAccount(Account account) {
+        Account createdAccount = accountRepository.save(account);
+        return createdAccount.getId();
+    }
+
+    @Override
+    @AccountAccessPermissionRequired(idArgName = "accountId")
+    @Transactional
+    public void activateAccount(long accountId) {
+        Account account = accountRepository.findWithLockById(accountId).orElseThrow(
+                () -> new AccountNotFoundException("account cannot be found!"));
+        if(account.isActive()) {
+            throw new AccountAlreadyActiveException("account is already active!");
+        }
+        account.setActive(true);
+    }
+
+    @Override
+    @AccountAccessPermissionRequired(idArgName = "accountId")
+    @Transactional
+    public void deactivateAccount(long accountId) {
+        Account account = accountRepository.findWithLockById(accountId).orElseThrow(
+                () -> new AccountNotFoundException("account cannot be found!"));
+        account.getCards().forEach(c -> c.setActive(false));
+        if(!account.isActive()) {
+            throw new AccountAlreadyDeactivatedException("account is already inactive!");
+        }
+        account.setActive(false);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAccount(long accountId) {
+        Account account = accountRepository.findById(accountId).orElseThrow(
+                () -> new AccountNotFoundException("such account does not exist!")
+        );
+        cardRepository.deleteAll(account.getCards());
+        transactionRepository.deleteAll(account.getTransactions());
+        accountRepository.delete(account);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Account selectAccountById(long accountId) {
+        return accountRepository.findByIdWithDetails(accountId).orElseThrow(
+                () -> new AccountNotFoundException("Could not find account!")
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    @CardAccessPermissionRequired(idArgName = "cardId")
+    public Account selectAccountByCardId(long cardId) {
+        return accountRepository.findByCardsId(cardId)
+                .orElseThrow(
+                        () -> new AccountNotFoundException("Could not find account!")
+                );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    @CustomerAccessPermissionRequired
+    public List<Account> selectAccountsByCustomerEmail(String customerEmail) {
+        List<Account> accountList = accountRepository.findAllByCustomersEmail(customerEmail);
+        if(accountList == null || accountList.isEmpty()) {
+            throw new AccountNotFoundException("accounts could not be found!");
+        }
+        return accountList;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    @CustomerAccessPermissionRequired(idArgName = "customerId")
+    public List<Account> selectAccountsByCustomerId(long customerId) {
+        List<Account> accountList = accountRepository.findAllByCustomersId(customerId);
+        if(accountList == null || accountList.isEmpty()) {
+            throw new AccountNotFoundException("accounts could not be found!");
+        }
+        return accountList;
+    }
+
+    @Override
+    @AccountAccessPermissionRequired(idArgName = "accountId")
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.ACCOUNT)
+    @Transactional
+    public void updateAccount(long accountId, String accountName) {
+        Account existingAccount = accountRepository.findWithLockById(accountId).orElseThrow(
+                () -> new AccountNotFoundException("such account does not exist!")
+        );
+        if(accountName != null)existingAccount.setName(accountName);
+    }
+
+    @Override
+    @AccountAccessPermissionRequired(idArgName = "accountId")
+    @CustomerAccessPermissionRequired(idArgName = "customerId")
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.ACCOUNT)
+    @Transactional
+    public void registerCustomerToAccount(long accountId, long customerId) {
+        Account account = accountRepository.findById(accountId).orElseThrow(
+                () -> new AccountNotFoundException("such account does not exist!")
+        );
+        Customer customer = customerRepository.findById(customerId).orElseThrow(
+                () -> new CustomerNotFoundException("such customer does not exist!")
+        );
+        account.getCustomers().add(customer);
+        customer.getAccounts().add(account);
+    }
+
+    @Override
+    @AccountAccessPermissionRequired(idArgName = "accountId")
+    @Transactional(readOnly = true)
+    public BigDecimal getAccountBalanceByCurrency(long accountId, String currencyCode) {
+        return cardRepository.getBalanceForAccount(accountId, currencyCode).orElseThrow(
+                () -> new CardBalanceNotFoundException("Could not determine balance of the account!")
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    @AccountAccessPermissionRequired
+    public Page<Account> filterAccounts(AccountFilterRequest accountFilterRequest, PageRequest pageRequest) {
+        Specification<Account> specification = Specification.unrestricted();
+
+        if (accountFilterRequest.getName() != null && !accountFilterRequest.getName().isEmpty()) {
+            specification = specification.and((root, query, cb) ->
+                    cb.equal(root.get("name"), accountFilterRequest.getName()));
+        }
+
+        if (accountFilterRequest.getCategory() != null) {
+            specification = specification.and((root, query, cb) ->
+                    cb.equal(root.get("category"), accountFilterRequest.getCategory()));
+        }
+
+        if(accountFilterRequest.getDateOpened() != null) {
+            specification = specification.and((root, query, cb) ->
+                    cb.greaterThanOrEqualTo(root.get("dateOpened"), accountFilterRequest.getDateOpened()));
+        }
+
+        if(accountFilterRequest.getIsActive() != null) {
+            specification = specification.and((root, query, cb) ->
+                    cb.equal(root.get("isActive"), accountFilterRequest.getIsActive()));
+        }
+
+        return accountRepository.findAll(specification, PageUtils.buildPageable(pageRequest));
+    }
+
+}

@@ -94,16 +94,16 @@ cd Banking_System
 
 ---
 
-## 💡 Used Paradigms
+## Used Paradigms
 
-### 🎯 Object-Oriented Programming (OOP)
+### Object-Oriented Programming (OOP)
 - **Encapsulation** - Data hiding with private/public access modifiers
 - **Inheritance** - Code reuse through class hierarchies
 - **Polymorphism** - Method overriding and interface implementation
 - **Abstraction** - Interfaces and abstract classes for contracts
 - **SOLID Principles** - Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion
 
-### ⚡ Aspect-Oriented Programming (AOP)
+### Aspect-Oriented Programming (AOP)
 - **Transactions** - Cross-cutting concern for data consistency
 - **Permissions** - Aspect-based security checks
 - **Security** - Authentication and authorization aspects

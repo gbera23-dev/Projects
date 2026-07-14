@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Set;
 
 /* This class keeps information about accounts. Each customer may have several accounts. Several customers can also have a shared account. */
 @AllArgsConstructor
@@ -37,12 +36,12 @@ public class Account {
     private boolean isActive;
 
     @OneToMany(mappedBy = "account")
-    private Set<Transaction> transactions;
+    private List<Transaction> transactions;
 
     @OneToMany(mappedBy = "account")
-    private Set<Card> cards;
+    private List<Card> cards;
 
     @ManyToMany
     @JoinTable(name = "Account_customer", joinColumns = @JoinColumn(name = "Account_id"), inverseJoinColumns = @JoinColumn(name = "Customer_id"))
-    private Set<Customer> customers;
+    private List<Customer> customers;
 }

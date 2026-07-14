@@ -59,7 +59,7 @@ class AccountServiceImplTest {
         account.setId(1L);
         account.setName("Main Account");
         account.setActive(false);
-        account.setCustomers(new HashSet<>());
+        account.setCustomers(new ArrayList<>());
     }
 
     @Test
@@ -97,7 +97,7 @@ class AccountServiceImplTest {
 
     @Test
     void testDeactivateAccountAlreadyInactiveThrowsException() {
-        account.setCards(Set.of(new Card()));
+        account.setCards(List.of(new Card()));
         when(accountRepository.findWithLockById(1L)).thenReturn(Optional.of(account));
         assertThrows(AccountAlreadyDeactivatedException.class, () -> accountService.deactivateAccount(1L));
     }
@@ -106,7 +106,7 @@ class AccountServiceImplTest {
     void testDeactivateAccountActiveDeactivatesAccount() {
         Card card = new Card();
         account.setActive(true);
-        account.setCards(Set.of(card));
+        account.setCards(List.of(card));
         when(accountRepository.findWithLockById(1L)).thenReturn(Optional.of(account));
         accountService.deactivateAccount(1L);
         assertFalse(account.isActive());
@@ -121,8 +121,8 @@ class AccountServiceImplTest {
     @Test
     void testDeleteAccountFoundDeletesAccount() {
         when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
-        account.setCards(new HashSet<>());
-        account.setTransactions(new HashSet<>());
+        account.setCards(new ArrayList<>());
+        account.setTransactions(new ArrayList<>());
 
         accountService.deleteAccount(1L);
         verify(accountRepository, times(1)).delete(account);
@@ -130,14 +130,14 @@ class AccountServiceImplTest {
 
     @Test
     void testSelectAccountByIdFound() {
-        when(accountRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(account));
+        when(accountRepository.findByIdWithCustomers(1L)).thenReturn(Optional.of(account));
         Account result = accountService.selectAccountById(1L);
         assertEquals(account, result);
     }
 
     @Test
     void testSelectAccountByIdNotFoundThrowsException() {
-        when(accountRepository.findByIdWithDetails(1L)).thenReturn(Optional.empty());
+        when(accountRepository.findByIdWithCustomers(1L)).thenReturn(Optional.empty());
         assertThrows(AccountNotFoundException.class, () -> accountService.selectAccountById(1L));
     }
 

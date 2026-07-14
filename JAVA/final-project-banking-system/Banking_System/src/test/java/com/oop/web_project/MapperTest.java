@@ -47,7 +47,7 @@ class AccountApiMapperTest {
         customer.setId(1L);
         return new Account(1L, "Main Account", AccountCategory.CHECKING,
                 LocalDate.of(2022, 1, 1), true,
-                Set.of(transaction), Set.of(card), Set.of(customer));
+                List.of(transaction), List.of(card), List.of(customer));
     }
 
     private AccountCreationRequest createAccountCreationRequest() {
@@ -148,7 +148,7 @@ class AccountApiMapperTest {
     void testToProfileResponseWithEmptyListsReturnsEmptyLists() {
         Account account = new Account(1L, "Main Account", AccountCategory.CHECKING,
                 LocalDate.of(2022, 1, 1), true,
-                new HashSet<>(), new HashSet<>(), new HashSet<>());
+                new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
 
         AccountProfileResponse response = accountApiMapper.toProfileResponse(account);
 

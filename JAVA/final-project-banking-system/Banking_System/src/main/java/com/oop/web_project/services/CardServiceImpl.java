@@ -45,6 +45,7 @@ public class CardServiceImpl implements CardService {
 
     @Override
     @CardAccessPermissionRequired(idArgName = "cardId")
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CUSTOMER)
     @Transactional
     public void activateCard(long cardId) {
         Card card = cardRepository.findWithLockById(cardId).orElseThrow(
@@ -57,6 +58,7 @@ public class CardServiceImpl implements CardService {
 
     @Override
     @CardAccessPermissionRequired(idArgName = "cardId")
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CUSTOMER)
     @Transactional
     public void deactivateCard(long cardId) {
         Card card = cardRepository.findWithLockById(cardId).orElseThrow(
@@ -69,6 +71,7 @@ public class CardServiceImpl implements CardService {
 
     @Override
     @AccountAccessPermissionRequired(idArgName = "accountId")
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CUSTOMER)
     @Transactional
     public long createCard(long accountId, Card card) {
         Account account = accountRepository.findById(accountId)
@@ -88,6 +91,7 @@ public class CardServiceImpl implements CardService {
 
     @Override
     @Transactional(readOnly = true)
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CUSTOMER)
     @CardAccessPermissionRequired(idArgName = "cardId")
     public Card selectCardById(long cardId) {
         return cardRepository.findByIdWithDetails(cardId)
@@ -129,6 +133,7 @@ public class CardServiceImpl implements CardService {
     }
 
     @Override
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CUSTOMER)
     @CardAccessPermissionRequired(idArgName = "cardId")
     public List<CardBalance> selectCardBalances(long cardId) {
         return cardBalanceRepository.findAllByCardId(cardId);
@@ -252,6 +257,7 @@ public class CardServiceImpl implements CardService {
 
     @Override
     @Transactional(readOnly = true)
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CUSTOMER)
     @AccountAccessPermissionRequired(idArgName = "accountId")
     public List<Card> getAllCardsForAccount(long accountId) {
         return cardRepository.getAllByAccountId(accountId);
@@ -270,6 +276,7 @@ public class CardServiceImpl implements CardService {
 
     @Override
     @Transactional(readOnly = true)
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CUSTOMER)
     @CardAccessPermissionRequired
     public Page<Card> filterCards(CardFilterRequest cardFilterRequest, PageRequest pageRequest) {
 

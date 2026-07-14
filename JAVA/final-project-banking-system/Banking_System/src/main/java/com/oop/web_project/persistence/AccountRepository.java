@@ -18,12 +18,19 @@ import java.util.Optional;
 public interface AccountRepository extends JpaRepository<Account, Long>, JpaSpecificationExecutor<Account> {
 
     @Query("SELECT DISTINCT a FROM Account a " +
-            "LEFT JOIN FETCH a.transactions " +
             "LEFT JOIN FETCH a.cards " +
-            "LEFT JOIN FETCH a.customers c " +
-            "LEFT JOIN FETCH c.accounts " +
             "WHERE a.id = :id")
-    Optional<Account> findByIdWithDetails(@Param("id") Long id);
+    Optional<Account> findByIdWithCards(@Param("id") Long id);
+
+    @Query("SELECT DISTINCT a FROM Account a " +
+            "LEFT JOIN FETCH a.transactions " +
+            "WHERE a.id = :id")
+    Optional<Account> findByIdWithTransactions(@Param("id") Long id);
+
+    @Query("SELECT DISTINCT a FROM Account a " +
+            "LEFT JOIN FETCH a.customers c " +
+            "WHERE a.id = :id")
+    Optional<Account> findByIdWithCustomers(@Param("id") Long id);
 
     List<Account> findAllByCustomersEmail(String email);
 

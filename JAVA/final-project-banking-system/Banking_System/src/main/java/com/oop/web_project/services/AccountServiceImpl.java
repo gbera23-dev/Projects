@@ -45,6 +45,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CUSTOMER)
     @Transactional
     public long createAccount(Account account) {
         Account createdAccount = accountRepository.save(account);
@@ -53,6 +54,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     @AccountAccessPermissionRequired(idArgName = "accountId")
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CUSTOMER)
     @Transactional
     public void activateAccount(long accountId) {
         Account account = accountRepository.findWithLockById(accountId).orElseThrow(
@@ -65,6 +67,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     @AccountAccessPermissionRequired(idArgName = "accountId")
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CUSTOMER)
     @Transactional
     public void deactivateAccount(long accountId) {
         Account account = accountRepository.findWithLockById(accountId).orElseThrow(
@@ -88,15 +91,22 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CUSTOMER)
     @Transactional(readOnly = true)
     public Account selectAccountById(long accountId) {
-        return accountRepository.findByIdWithDetails(accountId).orElseThrow(
+        Account account =  accountRepository.findByIdWithCustomers(accountId).orElseThrow(
                 () -> new AccountNotFoundException("Could not find account!")
         );
+
+        accountRepository.findByIdWithTransactions(accountId);
+        accountRepository.findByIdWithCards(accountId);
+
+        return account;
     }
 
     @Override
     @Transactional(readOnly = true)
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CUSTOMER)
     @CardAccessPermissionRequired(idArgName = "cardId")
     public Account selectAccountByCardId(long cardId) {
         return accountRepository.findByCardsId(cardId)
@@ -107,6 +117,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     @Transactional(readOnly = true)
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CUSTOMER)
     @CustomerAccessPermissionRequired
     public List<Account> selectAccountsByCustomerEmail(String customerEmail) {
         List<Account> accountList = accountRepository.findAllByCustomersEmail(customerEmail);
@@ -118,6 +129,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     @Transactional(readOnly = true)
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CUSTOMER)
     @CustomerAccessPermissionRequired(idArgName = "customerId")
     public List<Account> selectAccountsByCustomerId(long customerId) {
         List<Account> accountList = accountRepository.findAllByCustomersId(customerId);
@@ -129,7 +141,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     @AccountAccessPermissionRequired(idArgName = "accountId")
-    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.ACCOUNT)
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CUSTOMER)
     @Transactional
     public void updateAccount(long accountId, String accountName) {
         Account existingAccount = accountRepository.findWithLockById(accountId).orElseThrow(
@@ -155,6 +167,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CUSTOMER)
     @AccountAccessPermissionRequired(idArgName = "accountId")
     @Transactional(readOnly = true)
     public BigDecimal getAccountBalanceByCurrency(long accountId, String currencyCode) {
@@ -165,6 +178,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     @Transactional(readOnly = true)
+    @ActivityCheckRequired(checkActivityTarget = CheckActivityTarget.CUSTOMER)
     @AccountAccessPermissionRequired
     public Page<Account> filterAccounts(AccountFilterRequest accountFilterRequest, PageRequest pageRequest) {
         Specification<Account> specification = Specification.unrestricted();

@@ -8,10 +8,12 @@ import com.oop.web_project.exceptions.customerExceptions.CustomerIsNotActiveExce
 import com.oop.web_project.persistence.AccountRepository;
 import com.oop.web_project.persistence.CardRepository;
 import com.oop.web_project.persistence.CustomerRepository;
+import com.oop.web_project.utils.CustomerSecurityUtils;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.hibernate.AnnotationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 
@@ -30,13 +32,20 @@ public class ActivityCheckAspect {
         this.accountRepository = accountRepository;
     }
 
-    @Before(value = "@annotation(activityCheckRequired) && args(id, ..)")
+    @Before(value = "@annotation(activityCheckRequired)")
     public void checkEntityActivity(JoinPoint jp,
-                                      long id,
                                       ActivityCheckRequired activityCheckRequired) {
 
         CheckActivityTarget checkActivityTarget = activityCheckRequired.checkActivityTarget();
 
+        long id = -1L;
+        if (checkActivityTarget == CheckActivityTarget.ACCOUNT || checkActivityTarget == CheckActivityTarget.CARD) {
+            Object[] args = jp.getArgs();
+            if (args.length == 0 || !(args[0] instanceof Long)) {
+                throw new IllegalArgumentException("ACCOUNT/CARD check requires a long id as first argument");
+            }
+            id = (long) args[0];
+        }
 
         switch (checkActivityTarget) {
             case ACCOUNT -> {
@@ -50,7 +59,7 @@ public class ActivityCheckAspect {
                 }
             }
             case CUSTOMER -> {
-                if (!customerRepository.existsByIdAndIsActiveTrue(id)) {
+                if (!customerRepository.existsByEmailAndIsActiveTrue(CustomerSecurityUtils.getEmail())) {
                     throw new CustomerIsNotActiveException("This customer is deactivated, access is forbidden!");
                 }
             }

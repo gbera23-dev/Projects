@@ -1,8 +1,10 @@
 package com.oop.web_project;
 
 import com.mysql.cj.x.protobuf.MysqlxCrud;
+import com.oop.web_project.entities.Customer;
 import com.oop.web_project.entities.Role;
 import com.oop.web_project.exceptions.customerExceptions.CustomerCannotBeAuthenticatedException;
+import com.oop.web_project.persistence.CustomerRepository;
 import com.oop.web_project.services.AuthServiceImpl;
 import com.oop.web_project.services.JWTService;
 import org.junit.jupiter.api.Test;
@@ -33,6 +35,9 @@ class AuthServiceImplTest {
     @Mock
     private JWTService jwtService;
 
+    @Mock
+    private CustomerRepository customerRepository;
+
     @InjectMocks
     private AuthServiceImpl authService;
 
@@ -40,6 +45,8 @@ class AuthServiceImplTest {
     void testAuthenticateCustomerAuthenticatedReturnsToken() {
         Authentication auth = mock(Authentication.class);
         GrantedAuthority grantedAuthority = mock(GrantedAuthority.class);
+        Customer customer = new Customer();
+        customer.setActive(true);
 
         when(grantedAuthority.getAuthority()).thenReturn("STANDARD");
         when(auth.getAuthorities()).thenAnswer(invocation -> List.of(grantedAuthority));
@@ -48,6 +55,7 @@ class AuthServiceImplTest {
         when(auth.isAuthenticated()).thenReturn(true);
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(auth);
         when(jwtService.generateToken("test@example.com", Role.STANDARD)).thenReturn("jwt-token");
+        when(customerRepository.getCustomerByEmail(any(String.class))).thenReturn(Optional.of(customer));
 
         String result = authService.authenticateCustomer("test@example.com", "password");
 
@@ -68,9 +76,12 @@ class AuthServiceImplTest {
     void testAuthenticateCustomerCallsAuthenticationManager() {
         Authentication auth = mock(Authentication.class);
         when(auth.isAuthenticated()).thenReturn(true);
+        Customer customer = new Customer();
+        customer.setActive(true);
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(auth);
         when(jwtService.generateToken("test@example.com", Role.STANDARD)).thenReturn("jwt-token");
         GrantedAuthority grantedAuthority = mock(GrantedAuthority.class);
+        when(customerRepository.getCustomerByEmail(any(String.class))).thenReturn(Optional.of(customer));
 
         when(grantedAuthority.getAuthority()).thenReturn("STANDARD");
         when(auth.getAuthorities()).thenAnswer(invocation -> List.of(grantedAuthority));
@@ -84,16 +95,18 @@ class AuthServiceImplTest {
     void testAuthenticateCustomerCallsJwtServiceWithEmail() {
         Authentication auth = mock(Authentication.class);
         GrantedAuthority grantedAuthority = mock(GrantedAuthority.class);
-
+        Customer customer = new Customer();
+        customer.setActive(true);
         when(grantedAuthority.getAuthority()).thenReturn("STANDARD");
+        when(customerRepository.getCustomerByEmail(any(String.class))).thenReturn(Optional.of(customer));
+
         when(auth.isAuthenticated()).thenReturn(true);
         when(auth.getAuthorities()).thenAnswer(invocation -> List.of(grantedAuthority));
-
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(auth);
         when(jwtService.generateToken("test@example.com", Role.STANDARD)).thenReturn("jwt-token");
         String token = authService.authenticateCustomer("test@example.com", "password");
         verify(jwtService, times(1)).generateToken("test@example.com", Role.STANDARD);
-        assertEquals("jwt-token", token); // Optional: verifies the return value matches
+        assertEquals("jwt-token", token);
     }
 
 

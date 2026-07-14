@@ -12,6 +12,7 @@ import com.oop.web_project.exceptions.customerExceptions.CustomerDetailsNotFound
 import com.oop.web_project.exceptions.customerExceptions.CustomerIsNotAuthenticatedException;
 import com.oop.web_project.exceptions.otherExceptions.CouldNotExtractIdException;
 import com.oop.web_project.persistence.CustomerRepository;
+import com.oop.web_project.utils.CustomerSecurityUtils;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
@@ -45,7 +46,7 @@ public class AccessPermissionAspect {
     public void checkCardAccessPermission(JoinPoint jp,
                                         CardAccessPermissionRequired cardAccessPermissionRequired) {
 
-        String email = getEmail();
+        String email = CustomerSecurityUtils.getEmail();
 
         boolean isManager = customerRepository.existsByEmailAndRole(email, Role.MANAGER);
 
@@ -64,7 +65,7 @@ public class AccessPermissionAspect {
     public void checkAccountAccessPermission(JoinPoint jp,
                                           AccountAccessPermissionRequired accountAccessPermissionRequired) {
 
-        String email = getEmail();
+        String email = CustomerSecurityUtils.getEmail();
 
         boolean isManager = customerRepository.existsByEmailAndRole(email, Role.MANAGER);
 
@@ -86,7 +87,7 @@ public class AccessPermissionAspect {
     public void checkCustomerAccessPermission(JoinPoint jp,
                                           CustomerAccessPermissionRequired customerAccessPermissionRequired) {
 
-        String email = getEmail();
+        String email = CustomerSecurityUtils.getEmail();
 
         boolean isManager = customerRepository.existsByEmailAndRole(email, Role.MANAGER);
 
@@ -128,22 +129,6 @@ public class AccessPermissionAspect {
         }
         throw new CouldNotExtractIdException("Could not extract id parameter " +
                 "from the method that requires id extraction!");
-    }
-
-    private static @NonNull String getEmail() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-
-        if(auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
-            throw new CustomerIsNotAuthenticatedException("Customer is not authenticated!");
-        }
-
-        UserDetails userDetails = (UserDetails)auth.getPrincipal();
-
-        if(userDetails == null) {
-            throw new CustomerDetailsNotFoundException("Could not find user details!");
-        }
-
-        return userDetails.getUsername();
     }
 
 }

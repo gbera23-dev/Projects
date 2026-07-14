@@ -54,5 +54,5 @@ public interface CustomerRepository extends JpaRepository<Customer, Long>, JpaSp
 
     boolean existsByEmailAndRole(String email, Role role);
 
-    boolean existsByIdAndIsActiveTrue(long customerId);
+    boolean existsByEmailAndIsActiveTrue(String email);
 }

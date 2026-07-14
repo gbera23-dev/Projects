@@ -33,19 +33,19 @@ public class AccountApiMapper {
         response.setCategory(account.getCategory());
         response.setDateOpened(account.getDateOpened());
         response.setActive(account.isActive());
-        Set<Transaction> transactions = account.getTransactions();
+        List<Transaction> transactions = account.getTransactions();
         List<TransactionResponse> transactionResponses = new ArrayList<>();
         for(Transaction transaction : transactions){
             transactionResponses.add(transactionApiMapper.toTransactionResponse(transaction));
         }
         response.setTransactions(transactionResponses);
-        Set<Card> cards = account.getCards();
+        List<Card> cards = account.getCards();
         List<CardSummaryResponse> cardSummaryResponses = new ArrayList<>();
         for(Card card : cards){
             cardSummaryResponses.add(cardApiMapper.toCardSummaryResponse(card));
         }
         response.setCards(cardSummaryResponses);
-        Set<Customer> customers = account.getCustomers();
+        List<Customer> customers = account.getCustomers();
         List<CustomerSummaryResponse> customerResponses = new ArrayList<>();
         for(Customer customer : customers){
             customerResponses.add(customerSummaryApiMapper.toSummaryResponse(customer));

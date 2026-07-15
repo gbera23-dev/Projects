@@ -18,6 +18,10 @@
   padding: var(--space-3) var(--space-4);
   color: var(--color-text-muted);
   text-align: left;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .th,
@@ -32,15 +36,28 @@
   top: 0;
   z-index: 1;
   background: var(--color-surface-muted);
-  color: var(--color-text-muted);
+  color: var(--color-text-subtle);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
-  letter-spacing: 0;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .td {
   line-height: var(--line-height-base);
+  color: var(--color-text-muted);
+}
+
+/* Zebra striping */
+.table tbody tr:nth-child(even) .td {
+  background: rgba(13, 21, 38, 0.015);
+}
+
+.table tbody tr:hover .td {
+  background: var(--color-primary-soft);
+  color: var(--color-text);
+  transition: background var(--transition-fast);
 }
 
 .table tbody tr:last-child .td,
@@ -48,23 +65,16 @@
   border-bottom: 0;
 }
 
-.left {
-  text-align: left;
-}
-
-.center {
-  text-align: center;
-}
-
-.right {
-  text-align: right;
-}
+.left   { text-align: left; }
+.center { text-align: center; }
+.right  { text-align: right; }
 
 .stateCell {
   padding: var(--space-8) var(--space-4);
   border-bottom: 1px solid var(--color-border);
-  color: var(--color-text-muted);
+  color: var(--color-text-subtle);
   text-align: center;
+  font-size: var(--font-size-sm);
 }
 
 @media (max-width: 640px) {

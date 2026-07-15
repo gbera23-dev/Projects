@@ -7,25 +7,10 @@
   pointer-events: none;
 }
 
-.topRight {
-  top: var(--space-5);
-  right: var(--space-5);
-}
-
-.bottomRight {
-  right: var(--space-5);
-  bottom: var(--space-5);
-}
-
-.topLeft {
-  top: var(--space-5);
-  left: var(--space-5);
-}
-
-.bottomLeft {
-  bottom: var(--space-5);
-  left: var(--space-5);
-}
+.topRight    { top: var(--space-5); right: var(--space-5); }
+.bottomRight { right: var(--space-5); bottom: var(--space-5); }
+.topLeft     { top: var(--space-5); left: var(--space-5); }
+.bottomLeft  { bottom: var(--space-5); left: var(--space-5); }
 
 .toast {
   display: grid;
@@ -34,6 +19,7 @@
   align-items: flex-start;
   padding: var(--space-4);
   border: 1px solid var(--color-border);
+  border-left: 4px solid currentColor;
   border-radius: var(--radius-lg);
   background: var(--color-surface);
   box-shadow: var(--shadow-md);
@@ -42,16 +28,15 @@
 }
 
 .statusDot {
-  width: 0.625rem;
-  height: 0.625rem;
-  margin-top: 0.35rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: 0.25rem;
   border-radius: 999px;
   background: currentColor;
+  flex-shrink: 0;
 }
 
-.content {
-  min-width: 0;
-}
+.content   { min-width: 0; }
 
 .title {
   margin: 0;
@@ -69,9 +54,7 @@
   overflow-wrap: anywhere;
 }
 
-.action {
-  margin-top: var(--space-3);
-}
+.action  { margin-top: var(--space-3); }
 
 .dismiss {
   display: inline-flex;
@@ -86,6 +69,7 @@
   cursor: pointer;
   font-size: var(--font-size-lg);
   line-height: 1;
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .dismiss:hover {
@@ -95,28 +79,14 @@
 
 .dismiss:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 4px var(--color-focus-ring);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 
-.info {
-  border-color: var(--color-info-border);
-  color: var(--color-info);
-}
-
-.success {
-  border-color: var(--color-success-border);
-  color: var(--color-success);
-}
-
-.warning {
-  border-color: var(--color-warning-border);
-  color: var(--color-warning);
-}
-
-.danger {
-  border-color: var(--color-danger-border);
-  color: var(--color-danger);
-}
+/* Semantic variants — color encodes meaning via border-left + statusDot */
+.info    { color: var(--color-info);    border-left-color: var(--color-info); }
+.success { color: var(--color-success); border-left-color: var(--color-success); }
+.warning { color: var(--color-warning); border-left-color: var(--color-warning); }
+.danger  { color: var(--color-danger);  border-left-color: var(--color-danger); }
 
 @media (max-width: 640px) {
   .container {

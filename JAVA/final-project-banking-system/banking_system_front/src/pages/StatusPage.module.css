@@ -8,6 +8,7 @@
   display: grid;
   min-height: calc(100vh - 8rem);
   place-items: center;
+  padding: var(--space-8) var(--space-4);
 }
 
 .statusCard,
@@ -24,30 +25,33 @@
   text-align: center;
 }
 
-.kicker,
+.kicker {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.08em;
+  line-height: var(--line-height-tight);
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
 .kickerDanger {
   margin: 0 0 var(--space-2);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
-  letter-spacing: 0;
+  letter-spacing: 0.08em;
   line-height: var(--line-height-tight);
   text-transform: uppercase;
-}
-
-.kicker {
-  color: var(--color-primary);
-}
-
-.kickerDanger {
   color: var(--color-danger);
 }
 
 .code {
   margin: 0 0 var(--space-3);
   color: var(--color-primary);
-  font-size: 3rem;
+  font-size: 3.5rem;
   font-weight: var(--font-weight-bold);
   line-height: 1;
+  letter-spacing: -0.04em;
 }
 
 .title {
@@ -56,11 +60,12 @@
   font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
+  letter-spacing: -0.025em;
   overflow-wrap: anywhere;
 }
 
 .message {
-  margin: 0 0 var(--space-5);
+  margin: 0 0 var(--space-6);
   color: var(--color-text-muted);
   font-size: var(--font-size-md);
   line-height: var(--line-height-base);

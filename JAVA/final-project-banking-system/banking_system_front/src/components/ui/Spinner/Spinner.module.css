@@ -4,36 +4,16 @@
   border: 2px solid currentColor;
   border-right-color: transparent;
   border-radius: 999px;
-  animation: spin 750ms linear infinite;
+  animation: spin 700ms linear infinite;
 }
 
-.sm {
-  width: 1rem;
-  height: 1rem;
-}
+.sm { width: 0.875rem; height: 0.875rem; }
+.md { width: 1.125rem; height: 1.125rem; }
+.lg { width: 1.875rem; height: 1.875rem; border-width: 3px; }
 
-.md {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
-.lg {
-  width: 2rem;
-  height: 2rem;
-  border-width: 3px;
-}
-
-.default {
-  color: var(--color-primary);
-}
-
-.muted {
-  color: var(--color-text-subtle);
-}
-
-.inverse {
-  color: var(--color-on-primary);
-}
+.default { color: var(--color-primary); }
+.muted   { color: var(--color-text-subtle); }
+.inverse { color: var(--color-on-primary); }
 
 .withLabel {
   display: inline-flex;
@@ -41,7 +21,7 @@
   gap: var(--space-3);
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-medium);
 }
 
 .label {
@@ -49,13 +29,9 @@
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .spinner {
-    animation-duration: 1.5s;
-  }
+  .spinner { animation-duration: 1.5s; }
 }

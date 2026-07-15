@@ -1,11 +1,30 @@
 .page {
   display: grid;
-  min-height: calc(100vh - 8rem);
+  min-height: calc(100vh - 3.5rem);
   place-items: center;
+  padding: var(--space-8) var(--space-4);
+  background: var(--color-page);
 }
 
 .card {
   width: min(100%, 26rem);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-8);
+}
+
+/* Decorative stripe at top of card */
+.card::before {
+  content: '';
+  display: block;
+  height: 3px;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  margin: calc(-1 * var(--space-8)) calc(-1 * var(--space-8)) var(--space-8);
+  border-top-left-radius: calc(var(--radius-xl) - 1px);
+  border-top-right-radius: calc(var(--radius-xl) - 1px);
 }
 
 .heading {
@@ -14,6 +33,7 @@
   font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
+  letter-spacing: -0.02em;
 }
 
 .form {
@@ -22,15 +42,21 @@
 }
 
 .footer {
-  margin: var(--space-5) 0 0;
-  color: var(--color-text-muted);
+  margin: var(--space-6) 0 0;
+  color: var(--color-text-subtle);
   font-size: var(--font-size-sm);
   line-height: var(--line-height-base);
   text-align: center;
 }
 
 .footer a {
+  color: var(--color-primary);
   font-weight: var(--font-weight-semibold);
+  text-decoration: none;
+}
+
+.footer a:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 640px) {

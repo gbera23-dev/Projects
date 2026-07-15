@@ -3,17 +3,20 @@
   gap: var(--space-6);
 }
 
+/* ---- Page header ---- */
 .pageHeader {
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-1);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .kicker {
   margin: 0;
-  color: var(--color-primary);
+  color: var(--color-accent);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
-  letter-spacing: 0;
+  letter-spacing: 0.08em;
   line-height: var(--line-height-tight);
   text-transform: uppercase;
 }
@@ -24,8 +27,10 @@
   font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
+  letter-spacing: -0.025em;
 }
 
+/* ---- Layout helpers ---- */
 .lookupGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -53,30 +58,45 @@
 
 .mutedText {
   margin: 0;
-  color: var(--color-text-muted);
+  color: var(--color-text-subtle);
   font-size: var(--font-size-sm);
   line-height: var(--line-height-base);
 }
 
+/* ---- Profile grid ---- */
 .profileGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-4);
+  gap: 0;
+  margin: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
 .detailItem {
   display: grid;
   gap: var(--space-1);
   min-width: 0;
-  padding-bottom: var(--space-3);
+  padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+  transition: background var(--transition-fast);
+}
+
+.detailItem:nth-child(even) {
+  border-right: none;
+}
+
+.detailItem:nth-last-child(-n+2) {
+  border-bottom: none;
 }
 
 .detailLabel {
   color: var(--color-text-subtle);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
-  letter-spacing: 0;
+  letter-spacing: 0.06em;
   line-height: var(--line-height-tight);
   text-transform: uppercase;
 }
@@ -86,22 +106,25 @@
   margin: 0;
   color: var(--color-text);
   font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
   line-height: var(--line-height-base);
   overflow-wrap: anywhere;
 }
 
+/* ---- Status badges ---- */
 .badge {
   display: inline-flex;
   width: fit-content;
-  min-height: 1.5rem;
+  min-height: 1.375rem;
   align-items: center;
+  gap: var(--space-1);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: 999px;
   color: var(--color-text-muted);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
-  padding: var(--space-1) var(--space-2);
+  padding: 0.15rem var(--space-3);
 }
 
 .active {
@@ -122,6 +145,7 @@
   color: var(--color-text-muted);
 }
 
+/* ---- Form grids ---- */
 .formGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -132,10 +156,12 @@
   grid-column: 1 / -1;
 }
 
+/* ---- Action rows ---- */
 .actionsRow {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-3);
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .tableActions {
@@ -144,6 +170,7 @@
   gap: var(--space-2);
 }
 
+/* ---- Modal ---- */
 .modalText {
   margin: 0;
   color: var(--color-text-muted);
@@ -151,6 +178,7 @@
   line-height: var(--line-height-base);
 }
 
+/* ---- Chip content (scroll strip) ---- */
 .chipTitle {
   color: var(--color-text);
   font-size: var(--font-size-sm);
@@ -160,12 +188,13 @@
 }
 
 .chipMeta {
-  color: var(--color-text-muted);
+  color: var(--color-text-subtle);
   font-size: var(--font-size-xs);
   line-height: var(--line-height-tight);
   overflow-wrap: anywhere;
 }
 
+/* ---- Editable detail ---- */
 .viewRow {
   display: flex;
   align-items: center;
@@ -184,16 +213,36 @@
   gap: var(--space-3);
 }
 
+/* ---- Table scroll ---- */
 .scrollTableWrap {
   max-height: 22rem;
   overflow-y: auto;
+  border-radius: var(--radius-lg);
 }
 
+/* ---- Responsive ---- */
 @media (max-width: 760px) {
   .lookupGrid,
   .profileGrid,
-  .formGrid {
+  .formGrid,
+  .editFields {
     grid-template-columns: 1fr;
+  }
+
+  .detailItem:nth-child(even) {
+    border-right: none;
+  }
+
+  .detailItem {
+    border-right: none;
+  }
+
+  .detailItem:nth-last-child(-n+2) {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .detailItem:last-child {
+    border-bottom: none;
   }
 
   .inlineForm {

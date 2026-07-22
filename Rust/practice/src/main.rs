@@ -1,27 +1,61 @@
 
-use std::fmt;
-use std::fmt::*;
 
 
-struct Satellite {
-    name: String, 
-    velocity: f64 // miles per second 
-}
-
-impl fmt::Display for Satellite {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "Satellite name is {} and its velocity is 
-    {} miles per second", self.name, self.velocity)
-    }
-}
-
-
-
+use std::env::{self, args};
+use std::fs::{self, read_to_string}; 
+use std::collections::HashMap;
+use std::vec; 
 
 fn main() {
-    let hubble = Satellite {
-        name: String::from("Hubble Telescope"), 
-        velocity: 4.72 
+    if std::env::args().len() != 2 {
+        panic!("Two arguments must be provided!");
+    }
+    let opt_file_name = std::env::args().nth(1); 
+
+    match opt_file_name {
+        Some(ref val) => {
+            println!("Found: {}", val);
+        }
+        None => {
+            println!("file name could not be obtained");
+            panic!("Aborting execution...");
+        }
     }; 
-    println!("hubble is {}", hubble); 
+
+    let file_name: &str = &opt_file_name.unwrap();
+
+    let str_data = std::fs::read_to_string(file_name);
+
+    match str_data {
+        Ok(ref val) => {
+            println!("data: {}", val);
+        }, 
+        Err(e) => {
+            println!("Failed to read file: {}", e);
+            panic!("Aborting execution");
+        }
+    }
+
+    let data = str_data.unwrap();
+
+    let mut freq_map: HashMap<&str, u64> = HashMap::new(); 
+
+    for (index, str) in data.split_whitespace().enumerate() {
+        let mut e = freq_map.get(str); 
+
+        if e.is_none() {
+            freq_map.insert(str, 1); 
+        }
+        else {
+            freq_map.insert(str, e.unwrap()+1);
+        }
+    }
+    println!("Printing words from most frequent to less frequent!"); 
+
+    let mut sorted_pairs: Vec<(&&str, &u64)> = freq_map.iter().collect();
+
+    sorted_pairs.sort_by(|a, b| b.1.cmp(a.1));
+    for (k, v) in sorted_pairs {
+        println!("{} {}", k, v); 
+    }
 }

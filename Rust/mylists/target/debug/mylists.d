@@ -1,0 +1,1 @@
+/home/giga/Projects/Rust/mylists/target/debug/mylists: /home/giga/Projects/Rust/mylists/src/main.rs /home/giga/Projects/Rust/mylists/src/mylist/linkedlist.rs /home/giga/Projects/Rust/mylists/src/mylist.rs

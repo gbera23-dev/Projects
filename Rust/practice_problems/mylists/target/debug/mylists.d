@@ -1,0 +1,1 @@
+/home/giga/Projects/Rust/practice_problems/mylists/target/debug/mylists: /home/giga/Projects/Rust/practice_problems/mylists/src/main.rs /home/giga/Projects/Rust/practice_problems/mylists/src/mylist/linkedlist.rs /home/giga/Projects/Rust/practice_problems/mylists/src/mylist.rs

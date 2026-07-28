@@ -7,6 +7,7 @@ const END_JSON: &str = "}";
 const START_JSON_LIST: &str = "["; 
 const END_JSON_LIST: &str = "]";
 const KEY_VAL_SEPARATOR: &str = ":";
+const SPLIT_QUERY_SYMBOL: &str = "/";
  
  #[derive(Debug)]
 pub enum JsonVal {
@@ -14,7 +15,71 @@ pub enum JsonVal {
     ComplexVal(Option<HashMap<String, JsonVal>>)
 }
 
-pub fn parse_json(mut json_data:  String) -> Result<HashMap<String, JsonVal>, String> {
+pub struct JsonMap {
+    internal_map: HashMap<String, JsonVal>
+}
+
+impl JsonMap {
+    
+    pub fn send_query(&self, query: &str) -> Option<&JsonVal> {
+        
+        let m = &self.internal_map; 
+
+        let mut curr_val = Option::<&JsonVal>::None; 
+
+        for str in query.split(SPLIT_QUERY_SYMBOL) {
+
+            if curr_val.is_none() {
+                curr_val = m.get(str); 
+                continue; 
+            }
+
+            if curr_val.unwrap().is_complex_val() {
+                curr_val = curr_val.unwrap().extract_complex_val().as_ref().unwrap().get(str);
+            }
+
+            else {
+                break; 
+            }
+        }
+
+        curr_val 
+    } 
+}
+
+
+impl JsonVal {
+    pub fn extract_simple_val(&self) -> &Option<String> {
+        match self {
+            JsonVal::ComplexVal(_) => {&Option::None}, 
+            JsonVal::SimpleVal(val) => {&val}
+        }
+    }
+
+    pub fn extract_complex_val(&self) -> &Option<HashMap<String, JsonVal>> {
+        match self {
+            JsonVal::ComplexVal(val) => {&val}, 
+            JsonVal::SimpleVal(_) => {&Option::None}
+        }
+    }
+
+    pub fn is_simple_val(&self) -> bool {
+        match self {
+            JsonVal::ComplexVal(_) => {false}, 
+            JsonVal::SimpleVal(_) => {true}
+        }
+    }
+    
+    pub fn is_complex_val(&self) -> bool {
+        match self {
+            JsonVal::ComplexVal(_) => {true}, 
+            JsonVal::SimpleVal(_) => {false}
+        }
+    }
+
+}
+
+pub fn parse_json(mut json_data:  String) -> Result<JsonMap, String> {
 
     json_data = clean_json_data(json_data);
 
@@ -24,7 +89,7 @@ pub fn parse_json(mut json_data:  String) -> Result<HashMap<String, JsonVal>, St
 
     let map = build_json_map(&vec, &mut is_visited);
 
-    Result::Ok(map)
+    Result::Ok(JsonMap{internal_map: map})
 }
 
 fn build_json_map(vec: &Vec<String>,  is_visited: &mut Vec<bool>) -> HashMap<String, JsonVal> {

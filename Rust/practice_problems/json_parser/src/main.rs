@@ -20,7 +20,7 @@ fn main() {
 
     println!("Json parsing went well!..\nparser is happy :)\nparser's comment: oooohhhhh! I love json,  yum yum json, I want to eat json...");
     
-    let mut curr_dir = String::new(); 
+    let mut curr_dir = String::from("root"); 
     
     listen_for_user_reqs(&map, &mut curr_dir); 
 }
@@ -48,8 +48,7 @@ fn listen_for_user_reqs(map: &JsonMap, curr_dir: &mut String) {
 
         let query = format!("{}{}{}", curr_dir, "/", inp);
         
-        println!("query is {}", query);
-
+        print!("query is {}", query);
         
         let res = map.send_query
         (query.trim());

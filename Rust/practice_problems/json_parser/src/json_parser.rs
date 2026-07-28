@@ -99,7 +99,7 @@ impl JsonMap {
     }
 
     pub fn print_and_update_data(&self, res: Option<Vec<String>>, curr_dir: &mut String, query: String) {
-        let len = res.as_ref().unwrap().len();
+        let len: usize = res.as_ref().unwrap().len();
             if len == 1 {
             print!("In summary, single value was retrieved\nvalue: {:?}\n",
             res.as_ref().unwrap());
@@ -206,8 +206,10 @@ pub fn parse_json(mut json_data:  String) -> Result<JsonMap, String> {
     let mut is_visited = vec![false; vec.len()];
 
     let map = build_json_map(&vec, &mut is_visited);
-
-    Result::Ok(JsonMap{internal_map: map})
+    
+    let mut root_map = HashMap::new(); 
+    root_map.insert(String::from("root"), JsonVal::MapVal(Option::Some(map)));
+    Result::Ok(JsonMap{internal_map: root_map})
 }
 
 fn build_json_map(vec: &Vec<String>,  is_visited: &mut Vec<bool>) -> HashMap<String, JsonVal> {

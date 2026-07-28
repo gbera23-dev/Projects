@@ -1,18 +1,15 @@
 
 mod json_parser; 
 
-use std::fs;
 use std::io; 
-use std::collections::HashMap;
-
-use crate::json_parser::JsonVal; 
-use crate::json_parser::JsonMap;
+use std::io::Write;
+use crate::json_parser::{JsonMap, SpecialCommand};
 
 fn main() {
     let mut file_name = String::new(); 
-    println!("Please, input file name: "); 
+    print!("Please, input file name: "); 
+    let _ = io::stdout().flush();
     let _ = io::stdin().read_line(&mut file_name);
-    println!("file name is {}", file_name);
 
     let res = std::fs::read_to_string(file_name.trim());
     let map: JsonMap;
@@ -21,11 +18,45 @@ fn main() {
 
     map = json_parser::parse_json(res.unwrap()).unwrap();
 
-    let res = map.send_query
-    ("system_master_data/user_profiles/user_01/profile_details/first_name");
+    println!("Json parsing went well!..\nparser is happy :)\nparser's comment: oooohhhhh! I love json,  yum yum json, I want to eat json...");
+    
+    let mut curr_dir = String::new(); 
+    
+    listen_for_user_reqs(&map, &mut curr_dir); 
+}
 
-    if res.is_some() {
-        println!("{:?}", res.unwrap());
+
+fn listen_for_user_reqs(map: &JsonMap, curr_dir: &mut String) {
+    
+    loop {
+        let mut inp = String::new(); 
+        print!("Please, input the query(just press enter to exit the program): "); 
+        let _ = io::stdout().flush();
+
+        let _ = std::io::stdin().read_line(&mut inp);
+
+        if inp.trim().is_empty() {
+            println!("Good bye! :)");
+            break; 
+        } 
+        
+        if SpecialCommand::is_special_command(inp.trim()) {
+            let special_command = SpecialCommand::get_special_command(inp.trim());
+            special_command.unwrap().execute_command(curr_dir, map);
+            continue;
+        }
+
+        let query = format!("{}{}{}", curr_dir, "/", inp);
+        
+        println!("query is {}", query);
+
+        
+        let res = map.send_query
+        (query.trim());
+
+        if res.is_some() {
+            map.print_and_update_data(res, curr_dir, query);
+        }
     }
 
 }

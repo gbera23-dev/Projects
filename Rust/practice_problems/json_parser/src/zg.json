@@ -36,7 +36,7 @@
         },
         "package_dimensions": {
           "physical_metrics": {
-            "weight_pounds": "14.5",
+            "weight_pounds": ["13.5", "2.2", ".5"],
             "length_inches": "12.0",
             "width_inches": "8.5"
           }

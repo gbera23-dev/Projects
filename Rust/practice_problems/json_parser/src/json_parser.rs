@@ -19,32 +19,44 @@ pub struct JsonMap {
     internal_map: HashMap<String, JsonVal>
 }
 
+
 impl JsonMap {
     
-    pub fn send_query(&self, query: &str) -> Option<&JsonVal> {
+    pub fn send_query(&self, query: &str) -> Option<Vec<String>> {
         
         let m = &self.internal_map; 
 
         let mut curr_val = Option::<&JsonVal>::None; 
 
         for str in query.split(SPLIT_QUERY_SYMBOL) {
-
             if curr_val.is_none() {
                 curr_val = m.get(str); 
                 continue; 
             }
-
             if curr_val.unwrap().is_complex_val() {
                 curr_val = curr_val.unwrap().extract_complex_val().as_ref().unwrap().get(str);
             }
-
-            else {
-                break; 
-            }
         }
+        
+        if curr_val.is_none() {return Option::None};
 
-        curr_val 
+        let curr = curr_val.unwrap();
+        if curr.is_simple_val() {
+            return Option::Some(vec![curr.extract_simple_val().clone().unwrap()]);
+        } 
+        self.handle_complex_res(curr)
     } 
+
+    fn handle_complex_res(&self, curr: &JsonVal) -> Option<Vec<String>>{
+        let mut sol = Vec::new(); 
+
+        let curr_map = curr.extract_complex_val().as_ref().unwrap();
+
+        for key in curr_map.keys() {
+            sol.push(format!("{}{}", key.clone(), "..."));
+        }
+        Option::Some(sol)
+    }
 }
 
 

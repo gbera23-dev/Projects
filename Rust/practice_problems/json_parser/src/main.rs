@@ -22,8 +22,10 @@ fn main() {
     map = json_parser::parse_json(res.unwrap()).unwrap();
 
     let res = map.send_query
-    ("system_master_data/user_profiles/user_01/security_settings/two_factor_enabled");
+    ("system_master_data/user_profiles/user_01/profile_details/first_name");
 
-    println!("{:?}", res.unwrap().extract_simple_val().as_ref().unwrap());
+    if res.is_some() {
+        println!("{:?}", res.unwrap());
+    }
 
 }

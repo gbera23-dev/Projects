@@ -1,81 +1,12 @@
 {
-  "system_master_data": {
-    "user_profiles": {
-      "user_01": {
-        "profile_details": {
-          "first_name": "Sarah",
-          "last_name": "Jenkins",
-          "username": "sarahj_dev"
-        },
-        "security_settings": {
-          "two_factor_enabled": "true",
-          "last_password_change": "2026-03-15",
-          "account_status": "ACTIVE"
-        },
-        "system_permissions": {
-          "role_level": "ADMINISTRATOR",
-          "api_access_allowed": "true"
-        }
-      }
-    },
-    "logistics_management": {
-      "shipment_tracker": {
-        "order_reference": {
-          "tracking_number": "TRK-88291-XYZ",
-          "purchase_date": "2026-07-25"
-        },
-        "transit_route": {
-          "origin_hub": {
-            "facility_code": "FAC-LAX-01",
-            "departure_timestamp": "1784937600"
-          },
-          "destination_hub": {
-            "facility_code": "FAC-JFK-05",
-            "estimated_arrival": "2026-07-30"
-          }
-        },
-        "package_dimensions": {
-          "physical_metrics": {
-            "weight_pounds": ["13.5", "2.2", ".5"],
-            "length_inches": "12.0",
-            "width_inches": "8.5"
-          }
-        }
-      }
-    },
-    "smart_home_hub": {
-      "living_room_thermostat": {
-        "current_temperature_celsius": "22.5",
-        "target_temperature_celsius": "21.0",
-        "operational_mode": "COOLING"
-      },
-      "security_perimeter": {
-        "front_door_lock": "LOCKED",
-        "garage_door_sensor": "CLOSED",
-        "motion_detection_state": "ARMED_AWAY"
-      },
-      "network_diagnostics": {
-        "wi_fi_signal_strength": "EXCELLENT",
-        "firmware_version": "v5.4.2-build8"
-      }
-    },
-    "media_streaming": {
-      "media_catalog_item": {
-        "core_identifiers": {
-          "content_id": "VID-99201",
-          "global_release_year": "2024"
-        },
-        "creative_credits": {
-          "production_team": {
-            "director_name": "Elena Rostova",
-            "lead_writer": "Marcus Vance"
-          }
-        },
-        "playback_specifications": {
-          "video_stream": {
-            "resolution_tier": "4K_ULTRA_HD",
-            "aspect_ratio_format": "16_9",
-            "audio_codec_type": "DOLBY_ATMOS"
+  "d1" : {
+    "d2" : {
+      "d3" : {
+        "d4" : {
+          "d5" : {
+            "d6" : {
+              "d7" : ["1", "2", "3"]
+            }
           }
         }
       }

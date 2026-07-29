@@ -47,8 +47,8 @@ impl SpecialCommand {
     pub fn is_special_command(command: &str) -> bool {
         println!("=={}==", command);
         let lower_command = command.to_lowercase();
-        lower_command.starts_with("ls") || lower_command.starts_with("cd") 
-        || lower_command.starts_with("qu")
+        lower_command.starts_with(SPECIAL_COMMAND_LS) || lower_command.starts_with(SPECIAL_COMMAND_CD) 
+        || lower_command.starts_with(SPECIAL_COMMAND_QU)
     }
 
     pub fn get_special_command(str: &str) -> Option<SpecialCommand> {
@@ -87,15 +87,15 @@ impl JsonMap {
         if curr_val.is_none() {return Option::None};
 
         let curr = curr_val.unwrap();
+
         if curr.is_string_val() {
             return Option::Some(vec![curr.extract_string_val().clone().unwrap()]);
         } 
         else if curr.is_map_val() {
             return self.handle_map_res(curr);
         }
-        else {
-            return self.handle_list_res(curr);
-        }
+        
+        return self.handle_list_res(curr);
     }
 
     pub fn print_and_update_data(&self, res: Option<Vec<String>>, curr_dir: &mut String, query: String) {
@@ -203,72 +203,90 @@ pub fn parse_json(mut json_data:  String) -> Result<JsonMap, String> {
 
     let vec = build_json_token_vec(json_data);
 
-    let mut is_visited = vec![false; vec.len()];
+    let mut idx = 0; 
 
-    let map = build_json_map(&vec, &mut is_visited);
+    let map = build_json_map(&vec[0..vec.len()], &mut idx);
     
     let mut root_map = HashMap::new(); 
     root_map.insert(String::from("root"), JsonVal::MapVal(Option::Some(map)));
+
+    println!("root map is {:?}", root_map);
     Result::Ok(JsonMap{internal_map: root_map})
 }
 
-fn build_json_map(vec: &Vec<String>,  is_visited: &mut Vec<bool>) -> HashMap<String, JsonVal> {
+fn build_json_map(vec: &[String],  idx: &mut usize) -> HashMap<String, JsonVal> {
 
     let mut map = 
     HashMap::<String, JsonVal>::new();
 
-    for (idx, str) in vec.iter().enumerate() {
-        if is_visited[idx] {continue} 
+    loop {
 
-        is_visited[idx] = true;
+        if *idx >= vec.len() {
+            break; 
+        }
 
-        if str==START_JSON{continue}
-        if str==END_JSON{break}
+        let str = &vec[*idx]; 
+
+        if str==START_JSON{
+            *idx=*idx+1;
+            continue}
+        
+        if str==END_JSON{
+            break}
 
         if str==KEY_VAL_SEPARATOR {
-            let key = vec[idx-1].clone();
+            let key = vec[*idx-1].clone();
 
-            let val = if vec[idx+1] != START_JSON && vec[idx+1] != START_JSON_LIST
-             {JsonVal::StringVal(Option::Some(vec[idx+1].clone()))}
+            let val = if vec[*idx+1] != START_JSON && vec[*idx+1] != START_JSON_LIST
+             {JsonVal::StringVal(Option::Some(vec[*idx+1].clone()))}
 
-            else if vec[idx+1] == START_JSON {
-                JsonVal::MapVal(Option::Some(build_json_map(&vec, is_visited)))
+            else if vec[*idx+1] == START_JSON {
+                *idx=*idx+1;
+                JsonVal::MapVal(Option::Some(build_json_map(vec, idx)))
             }
             else {
-                JsonVal::ListVal(Option::Some(build_json_list(&vec, is_visited)))
+                *idx=*idx+1;
+                JsonVal::ListVal(Option::Some(build_json_list(vec, idx)))
             };
             map.insert(key, val); 
         }
+        *idx=*idx+1;
     }
 
     map
 }
 
-fn build_json_list(vec: &Vec<String>,  is_visited: &mut Vec<bool>) -> Vec<JsonVal> {
+fn build_json_list(vec: &[String],  idx: &mut usize) -> Vec<JsonVal> {
     let mut sol_vec = 
         Vec::<JsonVal>::new(); 
 
-    for (idx, str) in vec.iter().enumerate() {
-        if is_visited[idx] {continue} 
+    loop { 
+        if *idx>=vec.len() {break}
 
-        is_visited[idx] = true;
+        let str = &vec[*idx]; 
 
-        if str==START_JSON_LIST{continue}
-        if str==END_JSON_LIST{break}
+        if str==START_JSON_LIST{
+            *idx=*idx+1;
+            continue}
+
+        if str==END_JSON_LIST{
+            break}
 
         if str==LIST_ELEMS_SEPARATOR {
-        let curr_val = if vec[idx+1] != START_JSON && vec[idx+1] != START_JSON_LIST
-            {JsonVal::StringVal(Option::Some(vec[idx+1].clone()))}
+        let curr_val = if vec[*idx+1] != START_JSON && vec[*idx+1] != START_JSON_LIST
+            {JsonVal::StringVal(Option::Some(vec[*idx+1].clone()))}
 
-            else if vec[idx+1] == START_JSON {
-                JsonVal::MapVal(Option::Some(build_json_map(&vec, is_visited)))
+            else if vec[*idx+1] == START_JSON {
+                *idx=*idx+1;
+                JsonVal::MapVal(Option::Some(build_json_map(&vec, idx)))
             }
             else {
-                JsonVal::ListVal(Option::Some(build_json_list(&vec, is_visited)))
+                *idx=*idx+1;
+                JsonVal::ListVal(Option::Some(build_json_list(&vec, idx)))
             };
-
             sol_vec.push(curr_val);
         }
+        *idx=*idx+1;
     }
 
     sol_vec

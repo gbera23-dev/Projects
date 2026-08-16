@@ -3,8 +3,11 @@ use console_gui::Direction;
 use console_gui::Point;
 use console_gui::Panel; 
 use std::thread::sleep;
-use std::time::Duration; 
+use std::time::Duration;
+
+use crate::rect::Rect; 
 mod console_gui; 
+mod rect; 
 /*
 GUI will have util method to return a new panel, panel
 is as a struct essentially, which holds ownership of 
@@ -24,6 +27,16 @@ slowly move forward.
 //this is good. 
 //now we can start building GUI module. 
 
+/*
+Currently what can be added is just a point. 
+
+Using polymorphism to add new objects, utilizing either dynamic or static dispatch. 
+
+Idea is to maintain set of coordinates for each object and single reference for that object. 
+
+and make console_gui methods generic. 
+*/
+
 fn run_cool_simulation(panel: &mut Panel) {
     panel.display();
     //let's get a point in each horizon.
@@ -40,21 +53,28 @@ fn run_cool_simulation(panel: &mut Panel) {
     } 
 
     for  p in points.iter_mut() {
-        panel.add_point(p);
+        panel.add(p);
     }
 
     panel.display(); 
     loop {
         for p in points.iter_mut() {
-            panel.move_point(p, Direction::RIGHT);
+            panel.move_obj(p, Direction::RIGHT);
         }
 
         panel.display(); 
-        sleep(Duration::from_millis(30));
+        sleep(Duration::from_millis(50));
     }
 }
 
 fn main() {
     let mut panel = console_gui::get_new_panel(20, 20);
-    run_cool_simulation(&mut panel);
+    let mut r = Rect::get_new_rect(1, 1); 
+    panel.add(&mut r);
+    panel.display();
+    loop {
+        panel.move_obj(&mut r, Direction::RIGHT);
+        sleep(Duration::from_millis(50));
+        panel.display();
+    }
 }

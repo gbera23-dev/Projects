@@ -1,7 +1,6 @@
 
 use std::collections::HashSet;
-use rand;  
-
+use rand; 
 
 const REF_SIZE: i32 = 120; 
 const PLACED_POINT_BYTE_REP: u8 = b'*';
@@ -16,9 +15,34 @@ pub struct Panel {
 }
 
 pub struct Point {
-    x_coord: usize, 
-    y_coord: usize,
+    coords: Vec<(usize, usize)>,
     point_ref: Option<String> 
+}
+
+impl PanelObject for Point {
+
+    fn set_coords(&mut self, v: Vec<(usize, usize)>) {
+        self.coords=v;
+    }
+
+    fn get_coords(&mut self) -> &mut Vec<(usize, usize)> {
+        &mut self.coords
+    }
+
+    fn set_reference(&mut self) {
+        self.point_ref = Option::Some(generate_ref());
+    }
+
+    fn get_reference(&self) -> Option<&String> {
+        self.point_ref.as_ref()
+    }
+}
+
+pub trait PanelObject {
+    fn set_coords(&mut self, v: Vec<(usize, usize)>);
+    fn get_coords(&mut self) -> &mut Vec<(usize, usize)>;
+    fn set_reference(&mut self);
+    fn get_reference(&self) -> Option<&String>; 
 }
 
 pub enum Direction {
@@ -27,70 +51,67 @@ pub enum Direction {
 
 impl Point {
     pub fn get_new_point(x: usize, y: usize) -> Point {
-        Point{x_coord: x, y_coord: y, point_ref: Option::Some(generate_ref())}
+        Point{ coords:vec![(x, y)],point_ref: Option::Some(generate_ref())}
     }
 }
 
 
 impl Panel {
 
-    pub fn add_point(&mut self, p: &mut Point) {
+    pub fn add(&mut self, p: &mut dyn PanelObject) {
         let s = &mut self.inner_rep;
-        let x=  p.x_coord; 
-        let y=  p.y_coord;
 
-        self.place_symbol((x, y), PLACED_POINT_BYTE_REP);
 
-        //if point reference is not known, set new auto generated one 
-        if p.point_ref.is_none() {
-            p.point_ref = Option::Some(generate_ref());
+        for (x, y) in p.get_coords().iter() { 
+            self.place_symbol((*x, *y), PLACED_POINT_BYTE_REP);
         }
 
-        self.point_refs.insert(p.point_ref.as_mut().unwrap().clone());
+        let refer = p.get_reference(); 
+        //if point reference is not known, set new auto generated one 
+        if refer.is_none() {
+            p.set_reference();
+        }
+
+        self.point_refs.insert(p.get_reference().as_mut().unwrap().clone());
     }
 
 
-    pub fn erase_point(&mut self, p: &mut Point) {
-        if !self.point_is_occupied(p.x_coord, p.y_coord) {
-            println!("This place is not occupied by point!"); 
-            return; 
-        } 
-        self.place_symbol((p.x_coord, p.y_coord), EMPTY_CELL_BYTE_REP);
-        self.point_refs.remove(p.point_ref.as_ref().unwrap());
+    pub fn erase_point(&mut self, p: &mut dyn PanelObject) {
+
+        for (x, y) in p.get_coords().iter() { 
+            self.place_symbol((*x, *y), EMPTY_CELL_BYTE_REP);
+        }
+
+        self.point_refs.remove(p.get_reference().unwrap());
     }
 
-    pub fn move_point(&mut self, p: &mut Point, dir: Direction) {
+    pub fn move_obj(&mut self, p: &mut dyn PanelObject, dir: Direction) {
     
-        if !self.point_refs.contains(p.point_ref.as_ref().unwrap()) {
+        if !self.point_refs.contains(p.get_reference().unwrap()) {
             println!("such point is not added to a panel!");
             return; 
         }
-        println!("moving point with ref: {}", p.point_ref.as_ref().unwrap());
-        let coords = (p.x_coord, p.y_coord);
-        
-        self.place_symbol((p.x_coord, p.y_coord), EMPTY_CELL_BYTE_REP);
 
-        let mut new_coords: (usize, usize) = (coords.0, coords.1);
-        match dir {
-            Direction::LEFT => {
-                new_coords.0= if new_coords.0==0 {self.width-1} else {new_coords.0-1}
-            }, 
-            Direction::RIGHT => {
-                new_coords.0= if new_coords.0==self.width-1 {0} else {new_coords.0+1}
-            }, 
-            Direction::DOWN => {
-                new_coords.1= if new_coords.1==self.height-1 {0} else {new_coords.1+1}
-            }, 
-            Direction::UP => {
-                new_coords.1= if new_coords.1==0 {self.height-1} else {new_coords.1-1}
-            }
+        println!("moving point with ref: {}", p.get_reference().unwrap());
+
+
+        let v = p.get_coords();
+
+        let new_v = move_points(self.width, self.height, 
+            v, dir);
+
+        for i in 0..v.len() {
+            let older = v[i]; 
+            self.place_symbol(older, EMPTY_CELL_BYTE_REP);
         }
-        p.x_coord=new_coords.0; 
-        p.y_coord=new_coords.1;
-        self.place_symbol(new_coords, PLACED_POINT_BYTE_REP);
+        for i in 0..new_v.len() {
+            let new = new_v[i];
+            self.place_symbol(new, PLACED_POINT_BYTE_REP);
+        }
+        p.set_coords(new_v);
     }
 
-    pub fn point_is_occupied(&mut self, x: usize, y: usize) -> bool {
+    fn place_is_occupied(&mut self, x: usize, y: usize) -> bool {
         let s = &self.inner_rep;
         return self.get_symbol((x, y))==EMPTY_CELL_BYTE_REP; 
     }
@@ -140,10 +161,37 @@ pub fn get_new_panel(w: usize, h: usize) -> Box<Panel> {
 
 //reference is 120 length array of digits, there are loads of combinations, 
 //so chance of collision is extremely unlikely
-fn generate_ref() -> String { 
+pub fn generate_ref() -> String { 
     let mut generated = String::new();
     for _ in 0..REF_SIZE { 
         generated.push_str(&rand::random_range(0..10).to_string());
     }
     return generated;
 }
+
+
+fn move_points(width: usize, height: usize, 
+    v: &mut Vec<(usize, usize)>, dir: Direction) -> Vec<(usize ,usize)> {
+    let mut new_v: Vec<(usize, usize)> = Vec::new();
+
+    for i in 0..v.len() {
+
+        let mut new_coords: (usize, usize) = v[i];
+        match dir {
+                Direction::LEFT => {
+                    new_coords.0= if new_coords.0==0 {width-1} else {new_coords.0-1}
+                }, 
+                Direction::RIGHT => {
+                    new_coords.0= if new_coords.0==width-1 {0} else {new_coords.0+1}
+                }, 
+                Direction::DOWN => {
+                    new_coords.1= if new_coords.1==height-1 {0} else {new_coords.1+1}
+                }, 
+                Direction::UP => {
+                    new_coords.1= if new_coords.1==0 {height-1} else {new_coords.1-1}
+                }
+            }
+            new_v.push(new_coords);
+    }
+    new_v
+} 

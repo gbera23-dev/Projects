@@ -123,22 +123,12 @@ int hashmap_contains_key(Hashmap* hashmap, void* key) {
 }
 
 void free_linkedlist(Hashmap* hashmap, Hashnode* hashnode) {
-    if(hashmap->key_free_function==NULL && hashmap->val_free_function==NULL) {
-        while(hashnode!=NULL) {
-            Hashnode* tmp = hashnode; 
-            hashnode = hashnode->next; 
-            free(tmp); 
-        }
-    }
-
-    else {
-        while(hashnode!=NULL) {
-            Hashnode* tmp = hashnode; 
-            hashnode = hashnode->next; 
-            if(hashmap->key_free_function!=NULL)hashmap->key_free_function(tmp->key);
-            if(hashmap->val_free_function!=NULL)hashmap->val_free_function(tmp->val);
-            free(tmp); 
-        }
+    while(hashnode!=NULL) {
+        Hashnode* tmp = hashnode; 
+        hashnode = hashnode->next; 
+        if(hashmap->key_free_function!=NULL)hashmap->key_free_function(tmp->key);
+        if(hashmap->val_free_function!=NULL)hashmap->val_free_function(tmp->val);
+        free(tmp); 
     }
 }
 

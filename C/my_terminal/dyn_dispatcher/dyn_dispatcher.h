@@ -8,9 +8,9 @@
 typedef int (*cmd_handler_t) (int argc, void* argv[]);
 
 typedef struct Command { 
-    const char* name; //function name 
+    char* name; //function name 
     cmd_handler_t handler; 
-    const char* description; 
+    char* description; 
 } Command; 
 
 int execute_dispatcher(char* cmd_name, int argc, void* argv[]);

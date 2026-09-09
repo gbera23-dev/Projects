@@ -1,12 +1,14 @@
 
 #include "dyn_dispatcher.h"
 #include "../lru_cache/lru_cache.h"
+#include "../hashmap/hashmap.h"
+#include "../hashmap/type_impls/strmap.h"
 #include <string.h>
 #include <stdio.h> 
 #include <unistd.h>
 #include <stdlib.h>
 const int NUM_COMMANDS = 3; 
-Command* cmds[3];
+Hashmap* hmap; 
 
 //functions
 
@@ -63,24 +65,23 @@ Command* register_full_cmd() {
 
 
 void init_dispatcher() {
-    cmds[0] = register_exit_cmd(); 
-    cmds[1] = register_full_cmd(); 
-    cmds[2] = register_up_cmd(); 
+    hmap = hashmap_create(16, str_hash_f, str_cmp_f, str_dup_f, NULL, str_free_cmd_struct);
+    Command* exit_cmd = register_exit_cmd(); 
+    Command* full_cmd = register_full_cmd(); 
+    Command* up_cmd = register_up_cmd();   
+    hashmap_put(hmap, exit_cmd->name, exit_cmd); 
+    hashmap_put(hmap, full_cmd->name, full_cmd); 
+    hashmap_put(hmap, up_cmd->name, up_cmd); 
 }
 
 void destroy_dispatcher() {
-    for(int i = 0; i < NUM_COMMANDS; i++) {
-        free(cmds[i]); 
-    }
+    hashmap_destroy(hmap); 
 }
 
 int execute_dispatcher(char* cmd_name, int argc, void* argv[]) {
-    for(int i = 0; i < NUM_COMMANDS; i++) {
-        Command* cmd = cmds[i]; 
-        if(strcmp(cmd->name, cmd_name)==0) {
-            cmd_handler_t handler = cmd->handler; 
-            return handler(argc, argv); 
-        }
+    Command* cmd = (Command*)hashmap_get(hmap, cmd_name); 
+    if(cmd!=NULL) {
+        return cmd->handler(argc, argv); 
     }
     return 0; 
 }

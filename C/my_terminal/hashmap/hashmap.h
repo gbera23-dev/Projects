@@ -10,6 +10,8 @@ typedef int (*cmp_funct_t) (void* first, void* second);
 
 typedef void* (*dup_funct_t) (void* obj); 
 
+typedef void (*free_funct_t) (void* obj); 
+
 typedef struct Hashnode {
     void* key; 
     void* val; 
@@ -29,11 +31,13 @@ typedef struct Hashmap {
     int num_elems; 
     hash_funct_t hash_function;  
     cmp_funct_t cmp_function; 
-    dup_funct_t dup_function; 
+    dup_funct_t dup_function;
+    free_funct_t key_free_function;
+    free_funct_t val_free_function;   
 } Hashmap; 
 
 Hashmap* hashmap_create(int init_capacity, hash_funct_t hash_function, cmp_funct_t comp_function, 
-    dup_funct_t dup_function); 
+    dup_funct_t dup_function, free_funct_t key_free_function, free_funct_t val_free_function); 
 
 void hashmap_put(Hashmap* hashmap, void* key, void* val); 
 

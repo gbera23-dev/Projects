@@ -26,15 +26,17 @@ void append_map(Hashmap* hashmap, int hash_val, int idx, void* key, void* val) {
 }
 
 //state functions 
-
 Hashmap* hashmap_create(int init_capacity, hash_funct_t hash_function, 
-    cmp_funct_t cmp_function, dup_funct_t dup_function) {
+    cmp_funct_t cmp_function, dup_funct_t dup_function, 
+    free_funct_t key_free_function, free_funct_t val_free_function) {
     Hashmap* hashmap = malloc(sizeof(Hashmap)); 
     hashmap->num_buckets=init_capacity!=-1 ? init_capacity : DEFAULT_CAPACITY;
     hashmap->num_elems=0; 
     hashmap->hash_function = hash_function; 
     hashmap->cmp_function = cmp_function; 
     hashmap->dup_function = dup_function; 
+    hashmap->key_free_function = key_free_function;
+    hashmap->val_free_function = val_free_function;
     hashmap->bucket_array = malloc(hashmap->num_buckets*sizeof(Bucket)); 
 
     for(int i = 0; i < hashmap->num_buckets; i++) {
@@ -120,11 +122,23 @@ int hashmap_contains_key(Hashmap* hashmap, void* key) {
     return hashmap_get(hashmap, key)!=NULL; 
 }
 
-void free_linkedlist(Hashnode* hashnode) {
-    while(hashnode!=NULL) {
-        Hashnode* tmp = hashnode; 
-        hashnode = hashnode->next; 
-        free(tmp); 
+void free_linkedlist(Hashmap* hashmap, Hashnode* hashnode) {
+    if(hashmap->key_free_function==NULL && hashmap->val_free_function==NULL) {
+        while(hashnode!=NULL) {
+            Hashnode* tmp = hashnode; 
+            hashnode = hashnode->next; 
+            free(tmp); 
+        }
+    }
+
+    else {
+        while(hashnode!=NULL) {
+            Hashnode* tmp = hashnode; 
+            hashnode = hashnode->next; 
+            if(hashmap->key_free_function!=NULL)hashmap->key_free_function(tmp->key);
+            if(hashmap->val_free_function!=NULL)hashmap->val_free_function(tmp->val);
+            free(tmp); 
+        }
     }
 }
 
@@ -135,7 +149,7 @@ int hashmap_size(Hashmap* hashmap) {
 
 void hashmap_destroy(Hashmap* hashmap) {
     for(int i = 0; i < hashmap->num_buckets; i++) {
-        free_linkedlist(hashmap->bucket_array[i].head);
+        free_linkedlist(hashmap, hashmap->bucket_array[i].head);
     }
     free(hashmap->bucket_array);
     free(hashmap);

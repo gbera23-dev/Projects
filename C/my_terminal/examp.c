@@ -1,22 +1,7 @@
 #include <stdio.h> 
 #include "hashmap/hashmap.h"
 #include <stdlib.h>
-
-int int_hash_f(void* key) {
-    if((*(int*)key) < 0)return 0; 
-    return *(int*)key; 
-}
-
-int int_cmp_f(void* first, void* second) {
-    if ((*(int*)first) == (*(int*)second))return 0;
-    return -1; 
-}
-
-void* int_dup_f(void* obj) {
-    int* sec = malloc(sizeof(int)); 
-    (*sec) = *(int*)obj;
-    return sec;  
-}
+#include "hashmap/type_impls/intmap.h"
 
 void print(Hashmap* hashmap) {
     for(int i = 0; i < 100; i++) {
@@ -25,7 +10,7 @@ void print(Hashmap* hashmap) {
 }
 
 int main(int argc, char* argv[]) {
-    Hashmap* hashmap = hashmap_create(8, int_hash_f, int_cmp_f, int_dup_f);
+    Hashmap* hashmap = hashmap_create(8, int_hash_f, int_cmp_f, int_dup_f, NULL, NULL);
 
     int arr[101]; for(int i = 0; i < 101; i++)arr[i]=i; 
 

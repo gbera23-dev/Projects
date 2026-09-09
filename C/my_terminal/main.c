@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 #include <signal.h> 
 #include "lru_cache/lru_cache.h"
+#include "dyn_dispatcher/dyn_dispatcher.h"
 
 //constant variables 
 const int STDIN_FD = 0; 
@@ -71,26 +72,10 @@ int wait_for_child_death(int child_pid) {
 }
 
 int execute_special_command(lru_cache* cache, char** token_arr, int num_tokens, int* exit_toggled) {
-    if(strcmp(token_arr[0], "EXIT")==0) {
-        *exit_toggled=1; 
-        return 1;
-    }
-    else if(strcmp(token_arr[0], UP_CMD)==0) {
-        char* cached_val = get_not_that_recent(cache, atoi(token_arr[1]));
-        printf("%s\n", cached_val); 
-        return 1;
-    }
-
-    else if(strcmp(token_arr[0], FULL_CACHE)==0) {
-        char** data = get_all_curr_data(cache);
-        for(int i = 0; i < cache->curr_size; i++) {
-            if(i == cache->curr_size-1)printf("%s", data[i]);
-            else printf("%s, ", data[i]);
-        }printf("\n");
-        free(data); 
-        return 1; 
-    }
-    return 0; 
+    char* cmd = token_arr[0]; 
+    void* args[4]; 
+    args[0]=cache; args[1]=token_arr; args[2]=&num_tokens; args[3]=exit_toggled;
+    return execute_dispatcher(cmd, 4, args); 
 }
 
 int execute_normal_command(char** token_arr) {
@@ -126,10 +111,13 @@ void unbind_strings(char** tokens, int num_tokens) {
 }
 
 
-void init() {}
+void init() {
+    init_dispatcher();
+}
 
 void cleanup(lru_cache* cache) {
     destroy_cache(cache); 
+    destroy_dispatcher(); 
 }
 
 /*

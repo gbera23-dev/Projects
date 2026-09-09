@@ -1,10 +1,10 @@
 
-#include "hashmap/hashmap.h"
+#include "hashmap.h"
+#include <unistd.h> 
+#include <stdlib.h> 
 #include <stdio.h>
 
 const int DEFAULT_CAPACITY = 8; 
-
-
 
 //utility functions 
 
@@ -14,7 +14,6 @@ void append_map(Hashmap* hashmap, int hash_val, int idx, void* key, void* val) {
         new_node->key = key;
         new_node->val = val;
         new_node->next = NULL;  
-
         if(hashmap->bucket_array[idx].tail == NULL) {
             hashmap->bucket_array[idx].head = new_node; 
             hashmap->bucket_array[idx].tail = new_node; 
@@ -28,9 +27,11 @@ void append_map(Hashmap* hashmap, int hash_val, int idx, void* key, void* val) {
 
 //state functions 
 
-Hashmap* create_hashmap(int init_capacity, hash_funct_t hash_function, cmp_funct_t cmp_function, dup_funct_t dup_function) {
+Hashmap* hashmap_create(int init_capacity, hash_funct_t hash_function, 
+    cmp_funct_t cmp_function, dup_funct_t dup_function) {
     Hashmap* hashmap = malloc(sizeof(Hashmap)); 
     hashmap->num_buckets=init_capacity!=-1 ? init_capacity : DEFAULT_CAPACITY;
+    hashmap->num_elems=0; 
     hashmap->hash_function = hash_function; 
     hashmap->cmp_function = cmp_function; 
     hashmap->dup_function = dup_function; 
@@ -44,7 +45,7 @@ Hashmap* create_hashmap(int init_capacity, hash_funct_t hash_function, cmp_funct
     return hashmap;  
 } 
 
-void put(Hashmap* hashmap, void* key, void* val) {
+void hashmap_put(Hashmap* hashmap, void* key, void* val) {
     int hash_val = hashmap->hash_function(key); 
     int idx = hash_val % hashmap->num_buckets; 
 
@@ -60,19 +61,63 @@ void put(Hashmap* hashmap, void* key, void* val) {
 
     if(trav == NULL) {
         append_map(hashmap, hash_val, idx, key, val); 
+        hashmap->num_elems++;
     }
 }
 
-void* get(Hashmap* hashmap, void* key) {
+void* hashmap_get(Hashmap* hashmap, void* key) {
+    int hash_val = hashmap->hash_function(key); 
+    int idx = hash_val % hashmap->num_buckets; 
+
+    Hashnode* trav = hashmap->bucket_array[idx].head; 
+
+    while(trav != NULL) {
+        if(hashmap->cmp_function(key, trav->key) == 0) {
+            return trav->val; 
+        } 
+        trav = trav->next; 
+    }
+
     return NULL; 
 }
 
-void* remove(Hashmap* hashmap, void* key) {
-    return NULL; 
+void hashmap_remove(Hashmap* hashmap, void* key) {
+
+    int hash_val = hashmap->hash_function(key); 
+    int idx = hash_val % hashmap->num_buckets; 
+
+    Hashnode* trav = hashmap->bucket_array[idx].head; 
+
+    if(trav == NULL)return; 
+    if(hashmap->cmp_function(key, trav->key) == 0) {
+        Hashnode* tmp = trav;
+        if(tmp->next!=NULL){
+            hashmap->bucket_array[idx].head = tmp->next; 
+        }
+        else {
+            hashmap->bucket_array[idx].head = NULL; 
+            hashmap->bucket_array[idx].tail = NULL; 
+        }
+        free(tmp); 
+        hashmap->bucket_array[idx].bucket_len--; 
+        hashmap->num_elems--;
+        return; 
+    }
+
+    while(trav != NULL && trav->next != NULL) {
+        if(hashmap->cmp_function(trav->next->key, key)==0) {
+            Hashnode* tmp = trav->next; 
+            trav->next = tmp->next; 
+            free(tmp);  
+            break; 
+        }
+    }
+    hashmap->num_elems--;
+    hashmap->bucket_array[0].bucket_len--; 
 }
 
-int contains_key(Hashmap* hashmap, void* key) {
-    return 0; 
+int hashmap_contains_key(Hashmap* hashmap, void* key) {
+    return hashmap_get(hashmap, key)!=NULL; 
 }
 
 void free_linkedlist(Hashnode* hashnode) {
@@ -83,7 +128,12 @@ void free_linkedlist(Hashnode* hashnode) {
     }
 }
 
-void destroy_hashmap(Hashmap* hashmap) {
+int hashmap_size(Hashmap* hashmap) {
+    return hashmap->num_elems;
+}
+
+
+void hashmap_destroy(Hashmap* hashmap) {
     for(int i = 0; i < hashmap->num_buckets; i++) {
         free_linkedlist(hashmap->bucket_array[i].head);
     }

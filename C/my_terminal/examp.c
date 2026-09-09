@@ -1,34 +1,51 @@
 #include <stdio.h> 
-#include "lru_cache/lru_cache.h"
-#include "dyn_dispatcher/dyn_dispatcher.h"
+#include "hashmap/hashmap.h"
+#include <stdlib.h>
 
-void print_cache(Node* head) {
-    while(head!=NULL) {
-        if(head->nxt==NULL) {
-            printf("%s", head->command); 
-            break; 
-        }
-        printf("%s, ", head->command);
-        head=head->nxt; 
-    }printf("\n"); 
+int int_hash_f(void* key) {
+    if((*(int*)key) < 0)return 0; 
+    return *(int*)key; 
+}
+
+int int_cmp_f(void* first, void* second) {
+    if ((*(int*)first) == (*(int*)second))return 0;
+    return -1; 
+}
+
+void* int_dup_f(void* obj) {
+    int* sec = malloc(sizeof(int)); 
+    (*sec) = *(int*)obj;
+    return sec;  
+}
+
+void print(Hashmap* hashmap) {
+    for(int i = 0; i < 100; i++) {
+        printf("key: %d, val: %d\n", i, *(int*)hashmap_get(hashmap, &i));
+    }
 }
 
 int main(int argc, char* argv[]) {
-    init_dispatcher();
-    lru_cache* lru = create(3);
-    for(int i = 0; i < 10; i++) {
-        char ch[3]; 
-        ch[0]='a'; ch[1] = 'b'; ch[2] = '0' + i; 
-        add_to_cache(lru, ch); 
+    Hashmap* hashmap = hashmap_create(8, int_hash_f, int_cmp_f, int_dup_f);
+
+    int arr[101]; for(int i = 0; i < 101; i++)arr[i]=i; 
+
+    for(int i = 0; i < 100; i++) { 
+        hashmap_put(hashmap, &arr[i], &arr[100-i]);
     }
-    char* token_arr[2]; 
-    token_arr[0] = "UP"; 
-    token_arr[1] = "3"; 
-    void* arr[2];
-    arr[0] = lru; arr[1] = token_arr;  
-    
-    int res = execute("full_cmd", 2, arr);
-    destroy_dispatcher();
-    destroy_cache(lru); 
+
+    print(hashmap);
+
+    printf("hashmap size is %d\n", hashmap_size(hashmap));
+    int kj = 0;
+    printf("contains key? %d\n", hashmap_contains_key(hashmap, &kj));
+    int zj = -1;
+    printf("does not contain key? %d\n", hashmap_contains_key(hashmap, &zj));
+
+    for(int i = 0; i < 100; i++) {
+        hashmap_remove(hashmap, &i); 
+        printf("size is: %d\n", hashmap_size(hashmap));
+    }
+    hashmap_destroy(hashmap); 
+
     return 0; 
 }

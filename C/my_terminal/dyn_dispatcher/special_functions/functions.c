@@ -2,8 +2,12 @@
 #include <stdio.h> 
 #include <unistd.h> 
 #include <stdlib.h> 
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "../../lru_cache/lru_cache.h"
+#include <time.h> 
 #define MAX_COMMANDS 1024
+#define BUFF_SIZE 2048 
 
 
 // array
@@ -43,7 +47,98 @@ int check_f(int argc, void* argv[]) {
     return 1; 
 }
 
+int makedir_f(int argc, void* argv[]) {
+    char** token_arr = (char**)argv[1];
+    char* dir_name = token_arr[1]; 
+    int res = mkdir(dir_name, 0700);
+
+    if(res == 0) {
+        printf("Directory has been created!\n"); 
+    }
+    else {
+        printf("Directory creation failed!..\n"); 
+    }
+
+    return 1; 
+}
+
+int chdir_f(int argc, void* argv[]) {
+    char** token_arr = (char**)argv[1]; 
+    char* dir_name = token_arr[1]; 
+    int res = chdir(dir_name);
+    
+    if(res == 0) {
+        printf("Directory has changed successfully!\n"); 
+    }
+    else {
+        printf("Failed to change a current directory!..\n"); 
+    }
+    return 1; 
+}
+
+
+int currdir_f(int argc, void* argv[]) {
+    char buff[BUFF_SIZE];
+    getcwd(buff, BUFF_SIZE);
+    printf("Your current directory is %s. Do not get LOST AGAIN!\n", buff); 
+    return 1; 
+}
+
+int rmdir_f(int argc, void* argv[]) {
+    char** token_arr = (char**)argv[1]; 
+    char* dir_name = token_arr[1]; 
+    int res = rmdir(dir_name); 
+
+    if(res == 0) {
+        printf("Directory has been deleted successfully!.. Gone, but not forgotten...\n"); 
+    }
+    else {
+        printf("Now you are gonna just throw it all away, huh? Clean the directory before deletion!\n");
+    }
+    return 1; 
+}
+
+int time_f(int argc, void* argv[]) {
+    struct timespec tspc;
+    struct tm* local_time;
+    char time_string[32];  
+    int stat = clock_gettime(CLOCK_REALTIME, &tspc); 
+    if(stat != 0) {
+        printf("could not determine time, approaching black hole...\n"); 
+    }
+    else {
+        local_time = localtime(&tspc.tv_sec);
+        if(local_time == NULL) {
+            printf("failed to determine local time!..\n"); 
+        }
+
+        printf("Time is %d:%d:%d okoloko\n", local_time->tm_hour, local_time->tm_min, local_time->tm_sec);
+    }
+    return 1; 
+}
+
 //registrations 
+
+void reg_time_cmd(int* idx) {
+    cmds[(*idx)++] = construct_command("GETTIME", time_f, "Command used to get current system time"); 
+}
+
+void reg_rmdir_cmd(int* idx) {
+    cmds[(*idx)++] = construct_command("RMDIR", rmdir_f, "Command used to delete a empty directory"); 
+}
+
+void reg_currdir_cmd(int* idx) {
+    cmds[(*idx)++] = construct_command("CURRDIR", currdir_f, "Command used to get current directory"); 
+}
+
+void reg_chdir_cmd(int* idx) {
+    cmds[(*idx)++] = construct_command("CHDIR", chdir_f, 
+        "Command used to change a current working directory"); 
+}
+
+void reg_makedir_cmd(int* idx) {
+    cmds[(*idx)++] = construct_command("MAKEDIR", makedir_f, "Command used to make a new directory"); 
+}
 
 void reg_exit_cmd(int* idx) {
     cmds[(*idx)++] = construct_command("EXIT", exit_f, 
@@ -71,6 +166,11 @@ void initialize_commands_array() {
     reg_up_cmd(&idx);
     reg_full_cmd(&idx); 
     reg_check_cmd(&idx); 
+    reg_makedir_cmd(&idx); 
+    reg_chdir_cmd(&idx); 
+    reg_currdir_cmd(&idx);
+    reg_rmdir_cmd(&idx);  
+    reg_time_cmd(&idx); 
     cmds[idx]=NULL; 
 }
 

@@ -13,8 +13,11 @@ typedef struct Command {
     char* description; 
 } Command; 
 
+//constructor for Command struct, instantiates in heap
+Command* construct_command(char* cmd_name, cmd_handler_t funct, char* description); 
+
 int execute_dispatcher(char* cmd_name, int argc, void* argv[]);
 void init_dispatcher(); 
 void destroy_dispatcher(); 
 
-#endif 
+#endif

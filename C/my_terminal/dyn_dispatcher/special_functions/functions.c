@@ -6,8 +6,10 @@
 #include <sys/types.h>
 #include "../../lru_cache/lru_cache.h"
 #include <time.h> 
+#include <string.h> 
 #define MAX_COMMANDS 1024
 #define BUFF_SIZE 2048 
+#define STDOUT_FD 1 
 
 
 // array
@@ -16,6 +18,15 @@ Command* cmds[MAX_COMMANDS];
 
 
 //functions 
+
+int mr_meeseeks_f(int argc, void* argv[]) {
+    char** token_arr = (char**)argv[1]; 
+    token_arr[0] = "./my_terminal"; 
+    token_arr[1] = NULL; 
+    printf("PUFFF!!.."); 
+    printf("It is meee, meeseeks! Look at mee!!\n"); 
+    return 0; 
+}
 
 int exit_f(int argc, void* argv[]) {
     int* exit_toggled = (int*)argv[3]; 
@@ -117,7 +128,25 @@ int time_f(int argc, void* argv[]) {
     return 1; 
 }
 
+int ultq_f(int argc, void* argv[]) {
+    char* dramatic_pause_txt = "listen.... Carefully... answer is: ";
+    write(STDOUT_FD, dramatic_pause_txt, strlen(dramatic_pause_txt));
+    sleep(3);
+    printf("42\n");  
+    return 1; 
+}
+
 //registrations 
+
+void reg_meeseeks_cmd(int* idx) {
+    cmds[(*idx)++] = construct_command("SPAWNMEESEEKS", mr_meeseeks_f,
+    "Command spawns new meeseeks"); 
+}
+
+void reg_ultq_cmd(int* idx) {
+    cmds[(*idx)++] = construct_command("ANSWER_TO_ULTIMATE_QUESTION", ultq_f, 
+        "Command used to resolve existential crisis"); 
+}
 
 void reg_time_cmd(int* idx) {
     cmds[(*idx)++] = construct_command("GETTIME", time_f, "Command used to get current system time"); 
@@ -171,6 +200,8 @@ void initialize_commands_array() {
     reg_currdir_cmd(&idx);
     reg_rmdir_cmd(&idx);  
     reg_time_cmd(&idx); 
+    reg_ultq_cmd(&idx); 
+    reg_meeseeks_cmd(&idx); 
     cmds[idx]=NULL; 
 }
 

@@ -3,8 +3,10 @@
 #include <unistd.h> 
 #include <stdlib.h> 
 #include <stdio.h>
+#include <string.h> 
 
 const int DEFAULT_CAPACITY = 8; 
+const double RESIZE_FACTOR = 0.7; 
 
 //utility functions 
 
@@ -47,13 +49,55 @@ Hashmap* hashmap_create(int init_capacity, hash_funct_t hash_function,
     return hashmap;  
 } 
 
+void free_linkedlist(free_funct_t key_free_function, free_funct_t val_free_function, Hashnode* hashnode) {
+    while(hashnode!=NULL) {
+        Hashnode* tmp = hashnode; 
+        hashnode = hashnode->next; 
+        if(key_free_function!=NULL){
+            key_free_function(tmp->key);
+        }
+        if(val_free_function!=NULL)val_free_function(tmp->val);
+        free(tmp); 
+    }
+}
+
+
+void resize_hashmap(Hashmap* hashmap) {
+
+    Bucket* older_arr = hashmap->bucket_array; 
+
+    hashmap->num_buckets <<= 1; 
+
+    hashmap->bucket_array = malloc(hashmap->num_buckets*(sizeof(Bucket))); 
+
+    for(int i = 0; i < hashmap->num_buckets; i++) {
+        hashmap->bucket_array[i].head = NULL; 
+        hashmap->bucket_array[i].tail = NULL; 
+        hashmap->bucket_array[i].bucket_len = 0; 
+    }
+
+    hashmap->num_elems = 0; 
+
+    for(int i = 0; i < (hashmap->num_buckets>>1); i++) {
+        Hashnode* buckhead = older_arr[i].head; 
+        while(buckhead!=NULL) {
+            hashmap_put(hashmap, buckhead->key, buckhead->val);
+            Hashnode* tmp = buckhead; 
+            buckhead = buckhead->next;
+            free(tmp); 
+        }
+    }
+    free(older_arr); 
+}
+
 void hashmap_put(Hashmap* hashmap, void* key, void* val) {
     int hash_val = hashmap->hash_function(key); 
     int idx = hash_val % hashmap->num_buckets; 
 
     Hashnode* trav = hashmap->bucket_array[idx].head; 
-    
+
     while(trav!=NULL) {
+
         if(hashmap->cmp_function(trav->key, key)==0) {
             trav->val = val;
             break; 
@@ -64,6 +108,11 @@ void hashmap_put(Hashmap* hashmap, void* key, void* val) {
     if(trav == NULL) {
         append_map(hashmap, hash_val, idx, key, val); 
         hashmap->num_elems++;
+        //check if resizing is needed 
+        double ratio = ((double)hashmap->num_elems) / hashmap->num_buckets;
+        if(ratio>=RESIZE_FACTOR) {
+            resize_hashmap(hashmap); 
+        }
     }
 }
 
@@ -100,6 +149,8 @@ void hashmap_remove(Hashmap* hashmap, void* key) {
             hashmap->bucket_array[idx].head = NULL; 
             hashmap->bucket_array[idx].tail = NULL; 
         }
+        if(hashmap->key_free_function!=NULL)hashmap->key_free_function(tmp->key);
+        if(hashmap->val_free_function!=NULL)hashmap->val_free_function(tmp->val);
         free(tmp); 
         hashmap->bucket_array[idx].bucket_len--; 
         hashmap->num_elems--;
@@ -109,7 +160,9 @@ void hashmap_remove(Hashmap* hashmap, void* key) {
     while(trav != NULL && trav->next != NULL) {
         if(hashmap->cmp_function(trav->next->key, key)==0) {
             Hashnode* tmp = trav->next; 
-            trav->next = tmp->next; 
+            trav->next = tmp->next;
+            if(hashmap->key_free_function!=NULL)hashmap->key_free_function(tmp->key);
+            if(hashmap->val_free_function!=NULL)hashmap->val_free_function(tmp->val);
             free(tmp);  
             break; 
         }
@@ -122,16 +175,6 @@ int hashmap_contains_key(Hashmap* hashmap, void* key) {
     return hashmap_get(hashmap, key)!=NULL; 
 }
 
-void free_linkedlist(Hashmap* hashmap, Hashnode* hashnode) {
-    while(hashnode!=NULL) {
-        Hashnode* tmp = hashnode; 
-        hashnode = hashnode->next; 
-        if(hashmap->key_free_function!=NULL)hashmap->key_free_function(tmp->key);
-        if(hashmap->val_free_function!=NULL)hashmap->val_free_function(tmp->val);
-        free(tmp); 
-    }
-}
-
 int hashmap_size(Hashmap* hashmap) {
     return hashmap->num_elems;
 }
@@ -139,7 +182,7 @@ int hashmap_size(Hashmap* hashmap) {
 
 void hashmap_destroy(Hashmap* hashmap) {
     for(int i = 0; i < hashmap->num_buckets; i++) {
-        free_linkedlist(hashmap, hashmap->bucket_array[i].head);
+        free_linkedlist(hashmap->key_free_function, hashmap->val_free_function, hashmap->bucket_array[i].head);
     }
     free(hashmap->bucket_array);
     free(hashmap);

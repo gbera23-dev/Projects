@@ -23,17 +23,15 @@ const char START_MSG[] = "Starting execution...\n";
 const char END_MSG[] = "---------------------\n"; 
 const char LISTEN_MSG[] = "Listening for input!..\n";
 
-//special commands
-const char EXIT_CMD[] = "EXIT";
-const char UP_CMD[] = "UP";
-const char DOWN_CMD[] = "DOWN";
-const char FULL_CACHE[] = "FULL"; 
-
 
 int tokenize(char* buffer, char** token_arr) {
 
+    char buffer_cpy[BUFFER_LEN];
+
+    for(int i = 0; i < BUFFER_LEN; i++)buffer_cpy[i]=buffer[i];
+
     //using strtok utility 
-    char* token = strtok(buffer, " ");
+    char* token = strtok(buffer_cpy, " ");
     int curr_idx = 0;
 
     while(token != NULL) { 

@@ -1,16 +1,18 @@
 #include "strmap.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "../../dyn_dispatcher/dyn_dispatcher.h"
 
 int djb2(unsigned char *str) {
-    unsigned int hash = 5381;
+    unsigned int hash = 5381; 
     int c;
     while ((c = *str++)) {
         hash = ((hash << 5) + hash) + c; 
     }
-    return hash;
+    return (int)(hash & 0x7FFFFFFF); 
 }
+
 
 int str_hash_f(void* key) {
     return djb2((unsigned char*)key);

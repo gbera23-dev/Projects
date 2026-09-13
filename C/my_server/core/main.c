@@ -4,48 +4,53 @@
 #include <arpa/inet.h>
 #include <stdlib.h> 
 #include <string.h> 
-#define SERVER_PORT 8086
+#include <sys/wait.h>
+#include <sys/types.h>
+
+#define SERVER_PORT 8082
 #define BUFFER_LEN 1024 
+#define STD_IN 0
+#define STD_OUT 1
+#define SHELL_PATH "utils/my_terminal"
+
 
 //inject my_terminal shell through fork+exec
+void initiate_client_shell(int connection_fd) {
+    printf("server: initiating shell for the client\n");
+    int pid = fork(); 
 
-void disconnect_client(int connection_fd) {
-    printf("server: gracefully disconnecting client\n"); 
-    //send the goodbye message
-    char* msg = "goodbye!\n";
-            
-    if(write(connection_fd, msg, strlen(msg))<0){
-        printf("server: failed to write message\n"); 
+    if(pid<0) {
+        printf("server: something went wrong, exiting...\n");
+        exit(0);  
+    }
+    //child 
+    if(pid == 0) {
+        dup2(connection_fd, STD_IN); 
+        dup2(connection_fd, STD_OUT);
+        char *argv[] = {"/usr/bin/stdbuf", "-oL", "-eL", SHELL_PATH, NULL};
+  
+        int status = execvp(argv[0], argv); 
+        if(status < 0) {
+            printf("something went wrong!...\n"); 
+            exit(0); 
+        }
+    }
+
+    else {
+        printf("server: waiting for client's shell interactions\n"); 
+        int stat; 
+        wait(&stat);
     }
 }
 
+
 void serve_client(int connection_fd) {
     char buffer[BUFFER_LEN];
-    while(1) {
-        int num_read = read(connection_fd, buffer, BUFFER_LEN);
-        if(num_read<=0) {
-            printf("server: failed to read the data\n"); 
-            break; 
-        }
-        buffer[num_read-1]=0;
-
-        printf("server: NUM_READ: %d, %s\n", num_read, buffer); 
-
-        if(strcmp(buffer, "QUIT")==0) {
-            disconnect_client(connection_fd);
-            break; 
-        }
-
-        buffer[num_read-1]='\n'; buffer[num_read]=0;
-        int num_written = 
-        write(connection_fd, buffer, num_read);
-
-        if(num_written<0) {
-            printf("server: failed to write data\n");
-            break;
-        }
-    }
+    
+    initiate_client_shell(connection_fd);
+    
     printf("server: closing client connection\n"); 
+    
     close(connection_fd); 
 }
 
